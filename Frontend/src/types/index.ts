@@ -157,6 +157,33 @@ export interface ChildVocabularyProgress {
   byTopic: ChildVocabularyTopicProgress[];
 }
 
+export interface ChildPronunciationSession {
+  id: number;
+  lessonId: number;
+  topicId: number;
+  lessonTitle: string;
+  topicName: string;
+  completedAt: string;
+  totalWords: number;
+  averageScore: number;
+  correctCount: number;
+  incorrectCount: number;
+  accuracyPercent: number;
+}
+
+export interface ChildPronunciationProgress {
+  childId: number;
+  sessionCount: number;
+  totalAttempts: number;
+  correctAttempts: number;
+  incorrectAttempts: number;
+  accuracyPercent: number;
+  averageScore: number;
+  bestScore: number;
+  lastPracticedAt?: string | null;
+  sessions: ChildPronunciationSession[];
+}
+
 export interface ChildSkill {
   label: string;
   score: number;

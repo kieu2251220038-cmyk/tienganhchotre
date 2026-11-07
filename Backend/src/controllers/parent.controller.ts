@@ -396,7 +396,102 @@ export const getChildVocabularyProgress = async (req: Request, res: Response): P
     }
 };
 
-// 7. Cập nhật mục tiêu học tập (thời lượng khuyến khích hàng ngày - không khóa bài)
+// 7. Báo cáo lịch sử và tỷ lệ phát âm của bé (chỉ phụ huynh sở hữu hồ sơ mới được xem)
+export const getChildPronunciationProgress = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { childId } = req.params;
+        const parentId = req.user!.id;
+        const userRole = req.user!.role;
+        const numericChildId = Number(childId);
+
+        if (!Number.isInteger(numericChildId) || numericChildId <= 0) {
+            res.status(400).json({ message: 'childId không hợp lệ.' });
+            return;
+        }
+
+        const isOwner = await verifyChildOwnership(parentId, numericChildId, userRole);
+        if (!isOwner) {
+            res.status(403).json({ message: 'Quyền truy cập bị từ chối: Hồ sơ trẻ này không thuộc quyền quản lý của bạn!' });
+            return;
+        }
+
+        const [statsRows]: any = await pool.query(`
+            SELECT
+                COUNT(*) AS session_count,
+                COALESCE(SUM(total_words), 0) AS total_attempts,
+                COALESCE(SUM(correct_count), 0) AS correct_attempts,
+                COALESCE(SUM(incorrect_count), 0) AS incorrect_attempts,
+                COALESCE(ROUND(AVG(average_score)), 0) AS average_score,
+                COALESCE(MAX(average_score), 0) AS best_score,
+                MAX(completed_at) AS last_practiced_at
+            FROM speaking_summaries
+            WHERE user_id = ?
+        `, [numericChildId]);
+
+        const [sessionRows]: any = await pool.query(`
+            SELECT
+                ss.id,
+                ss.lesson_id,
+                ss.topic_id,
+                ss.completed_at,
+                ss.total_words,
+                ss.average_score,
+                ss.correct_count,
+                ss.incorrect_count,
+                l.title AS lesson_title,
+                t.name AS topic_name
+            FROM speaking_summaries ss
+            LEFT JOIN lessons l ON l.id = ss.lesson_id
+            LEFT JOIN topics t ON t.id = ss.topic_id
+            WHERE ss.user_id = ?
+            ORDER BY ss.completed_at DESC, ss.id DESC
+            LIMIT 12
+        `, [numericChildId]);
+
+        const stats = statsRows[0] || {};
+        const totalAttempts = Number(stats.total_attempts) || 0;
+        const correctAttempts = Number(stats.correct_attempts) || 0;
+        const accuracyPercent = totalAttempts > 0
+            ? Math.round((correctAttempts / totalAttempts) * 100)
+            : 0;
+
+        res.status(200).json({
+            childId: numericChildId,
+            sessionCount: Number(stats.session_count) || 0,
+            totalAttempts,
+            correctAttempts,
+            incorrectAttempts: Number(stats.incorrect_attempts) || 0,
+            accuracyPercent,
+            averageScore: Math.round(Number(stats.average_score) || 0),
+            bestScore: Math.round(Number(stats.best_score) || 0),
+            lastPracticedAt: stats.last_practiced_at || null,
+            sessions: sessionRows.map((row: any) => {
+                const totalWords = Number(row.total_words) || 0;
+                const correctCount = Number(row.correct_count) || 0;
+                return {
+                    id: Number(row.id),
+                    lessonId: Number(row.lesson_id),
+                    topicId: Number(row.topic_id),
+                    lessonTitle: row.lesson_title || 'Luyện nói AI',
+                    topicName: row.topic_name || 'Chủ đề chưa đặt tên',
+                    completedAt: row.completed_at,
+                    totalWords,
+                    averageScore: Math.round(Number(row.average_score) || 0),
+                    correctCount,
+                    incorrectCount: Number(row.incorrect_count) || 0,
+                    accuracyPercent: totalWords > 0
+                        ? Math.round((correctCount / totalWords) * 100)
+                        : 0
+                };
+            })
+        });
+    } catch (error) {
+        console.error('Lỗi khi lấy báo cáo phát âm của bé:', error);
+        res.status(500).json({ message: 'Lỗi khi tải báo cáo phát âm của bé.' });
+    }
+};
+
+// 8. Cập nhật mục tiêu học tập (thời lượng khuyến khích hàng ngày - không khóa bài)
 export const updateStudyGoals = async (req: Request, res: Response): Promise<void> => {
     try {
         const { childId } = req.params;

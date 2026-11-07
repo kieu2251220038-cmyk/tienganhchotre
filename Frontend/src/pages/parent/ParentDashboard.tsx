@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import { parentService } from '../../services/parentService';
-import type { ParentChild, ChildOverview, ChildActivity, ChildSkill, ChildVocabularyProgress } from '../../types';
+import type { ParentChild, ChildOverview, ChildActivity, ChildSkill, ChildVocabularyProgress, ChildPronunciationProgress } from '../../types';
 import speakingSummaryService from '../../services/speakingSummaryService';
 import type { SpeakingSummary } from '../../services/speakingSummaryService';
 import { sounds } from '../../utils/soundEffects';
@@ -17,6 +17,7 @@ export default function ParentDashboard() {
   const [activities, setActivities] = useState<ChildActivity[]>([]);
   const [skills, setSkills] = useState<ChildSkill[]>([]);
   const [vocabularyProgress, setVocabularyProgress] = useState<ChildVocabularyProgress | null>(null);
+  const [pronunciationProgress, setPronunciationProgress] = useState<ChildPronunciationProgress | null>(null);
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const [latestSpeakingSummary, setLatestSpeakingSummary] = useState<SpeakingSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -156,15 +157,17 @@ export default function ParentDashboard() {
       parentService.getChildOverview(selectedChildId),
       parentService.getChildActivities(selectedChildId),
       parentService.getChildSkills(selectedChildId),
-      parentService.getChildVocabularyProgress(selectedChildId)
+      parentService.getChildVocabularyProgress(selectedChildId),
+      parentService.getChildPronunciationProgress(selectedChildId)
     ])
-      .then(([ov, act, sk, vocab]) => {
+      .then(([ov, act, sk, vocab, pronunciation]) => {
         setOverview(ov);
         setNewGoalMinutes(ov.daily_goal_minutes || 15);
         setActivities(act);
         setSkills(sk.skills);
         setRecommendations(sk.recommendations);
         setVocabularyProgress(vocab);
+        setPronunciationProgress(pronunciation);
       })
       .catch((err) => console.error('Lỗi tải tiến độ con:', err))
       .finally(() => setLoading(false));
@@ -877,6 +880,73 @@ export default function ParentDashboard() {
               <div style={{ marginTop: '10px', color: '#64748B', fontSize: '12px' }}>
                 Cập nhật: {new Date(latestSpeakingSummary.completedAt).toLocaleString('vi-VN')}
               </div>
+            </div>
+          )}
+
+          {pronunciationProgress && (
+            <div style={{
+              backgroundColor: '#FFFFFF',
+              borderRadius: '24px',
+              padding: '24px',
+              border: '2px solid #FDE68A',
+              boxShadow: '0 4px 12px rgba(245, 158, 11, 0.08)'
+            }}>
+              <h3 style={{ fontFamily: 'Fredoka, sans-serif', fontSize: '20px', fontWeight: 800, color: '#92400E', margin: '0 0 6px' }}>
+                🎙️ Quản lý phát âm của bé
+              </h3>
+              <p style={{ margin: '0 0 16px', color: '#78716C', fontSize: '13px' }}>
+                Tỷ lệ chính xác được tính từ số từ bé phát âm đúng trên toàn bộ từ đã được chấm.
+              </p>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px', marginBottom: '18px' }}>
+                <div style={{ backgroundColor: '#FFF7ED', borderRadius: '14px', padding: '14px' }}>
+                  <div style={{ color: '#9A3412', fontSize: '12px', fontWeight: 700 }}>Tỷ lệ chính xác</div>
+                  <strong style={{ color: '#C2410C', fontSize: '24px' }}>{pronunciationProgress.accuracyPercent}%</strong>
+                </div>
+                <div style={{ backgroundColor: '#EFF6FF', borderRadius: '14px', padding: '14px' }}>
+                  <div style={{ color: '#1D4ED8', fontSize: '12px', fontWeight: 700 }}>Điểm trung bình</div>
+                  <strong style={{ color: '#2563EB', fontSize: '24px' }}>{pronunciationProgress.averageScore}%</strong>
+                </div>
+                <div style={{ backgroundColor: '#F0FDF4', borderRadius: '14px', padding: '14px' }}>
+                  <div style={{ color: '#166534', fontSize: '12px', fontWeight: 700 }}>Buổi đã luyện</div>
+                  <strong style={{ color: '#15803D', fontSize: '24px' }}>{pronunciationProgress.sessionCount}</strong>
+                </div>
+                <div style={{ backgroundColor: '#F5F3FF', borderRadius: '14px', padding: '14px' }}>
+                  <div style={{ color: '#6D28D9', fontSize: '12px', fontWeight: 700 }}>Điểm cao nhất</div>
+                  <strong style={{ color: '#7C3AED', fontSize: '24px' }}>{pronunciationProgress.bestScore}%</strong>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', gap: '10px', flexWrap: 'wrap' }}>
+                <strong style={{ color: '#334155', fontSize: '15px' }}>Lịch sử luyện nói gần đây</strong>
+                <span style={{ color: '#64748B', fontSize: '12px' }}>
+                  Đúng {pronunciationProgress.correctAttempts} / {pronunciationProgress.totalAttempts} từ
+                </span>
+              </div>
+
+              {pronunciationProgress.sessions.length === 0 ? (
+                <div style={{ padding: '20px', borderRadius: '12px', backgroundColor: '#FFFBEB', color: '#92400E', fontSize: '13px', textAlign: 'center' }}>
+                  Bé chưa có phiên luyện nói nào. Hãy mở bài <strong>Nói AI</strong> để bắt đầu.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {pronunciationProgress.sessions.map((session) => (
+                    <div key={session.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', padding: '11px 13px', borderRadius: '12px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                      <div>
+                        <div style={{ color: '#1E293B', fontWeight: 800, fontSize: '14px' }}>{session.lessonTitle}</div>
+                        <div style={{ color: '#64748B', fontSize: '12px', marginTop: '3px' }}>
+                          {session.topicName} · {new Date(session.completedAt).toLocaleString('vi-VN')}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '12px', fontWeight: 800 }}>
+                        <span style={{ color: '#15803D' }}>{session.correctCount}/{session.totalWords} đúng</span>
+                        <span style={{ color: session.accuracyPercent >= 70 ? '#2563EB' : '#C2410C' }}>{session.accuracyPercent}%</span>
+                        <span style={{ color: '#7C3AED' }}>{session.averageScore} điểm</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
