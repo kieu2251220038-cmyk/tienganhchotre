@@ -1,0 +1,24 @@
+import { Request, Response } from 'express';
+export declare const getAdminStats: (req: Request, res: Response) => Promise<void>;
+export declare const getAdminUsers: (req: Request, res: Response) => Promise<void>;
+export declare const updateAdminUser: (req: Request, res: Response) => Promise<void>;
+export declare const deleteAdminUser: (req: Request, res: Response) => Promise<void>;
+export declare const getAdminLessons: (req: Request, res: Response) => Promise<void>;
+export declare const createAdminLesson: (req: Request, res: Response) => Promise<void>;
+export declare const updateAdminLesson: (req: Request, res: Response) => Promise<void>;
+export declare const deleteAdminLesson: (req: Request, res: Response) => Promise<void>;
+export declare const getAdminVocabularies: (req: Request, res: Response) => Promise<void>;
+export declare const createAdminVocabulary: (req: Request, res: Response) => Promise<void>;
+export declare const updateAdminVocabulary: (req: Request, res: Response) => Promise<void>;
+export declare const deleteAdminVocabulary: (req: Request, res: Response) => Promise<void>;
+export declare const getAdminQuizQuestions: (req: Request, res: Response) => Promise<void>;
+export declare const createAdminQuizQuestion: (req: Request, res: Response) => Promise<void>;
+export declare const deleteAdminQuizQuestion: (req: Request, res: Response) => Promise<void>;
+export declare const getAdminTopics: (req: Request, res: Response) => Promise<void>;
+export declare const createAdminTopic: (req: Request, res: Response) => Promise<void>;
+export declare const updateAdminTopic: (req: Request, res: Response) => Promise<void>;
+export declare const deleteAdminTopic: (req: Request, res: Response) => Promise<void>;
+export declare const getSystemAnalytics: (req: Request, res: Response) => Promise<void>;
+export declare const getGameConfigs: (req: Request, res: Response) => Promise<void>;
+export declare const updateGameConfig: (req: Request, res: Response) => Promise<void>;
+//# sourceMappingURL=admin.controller.d.ts.map

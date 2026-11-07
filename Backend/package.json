@@ -1,0 +1,45 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "seed:curriculum": "node scripts/seed_full_curriculum.js",
+    "seed:curriculum:user": "node scripts/seed_requested_curriculum.js",
+    "check:curriculum:user": "node scripts/check_age_curriculum.js",
+    "seed:quiz": "node scripts/seed_quizzes.js",
+    "migrate:vocabulary-progress": "node scripts/migrate_vocabulary_progress.js",
+    "migrate:user-data": "node scripts/migrate_user_data_api.js",
+    "test:user-data": "node scripts/test_user_data_api.js",
+    "migrate:speaking": "node scripts/migrate_speaking_all_ages.js",
+    "db:reset": "node scripts/reset_and_seed.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^18.0.7",
+    "express": "^5.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.5.0",
+    "mysql2": "^3.24.5",
+    "openai": "^7.52.0"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.3.0",
+    "@types/node": "^26.6.5",
+    "nodemon": "^3.1.14",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

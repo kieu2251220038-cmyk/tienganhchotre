@@ -1,0 +1,18 @@
+# Environment files and secrets
+**/.env
+!**/.env.example
+
+# Dependencies and build output
+**/node_modules/
+**/dist/
+Backend/.venv/
+
+# Runtime uploads and local-generated media
+Backend/uploads/
+
+# Logs and local tooling
+**/*.log
+.vscode/
+.idea/
+.DS_Store
+*.local
