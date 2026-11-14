@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { sounds, speakEnglish } from '../../utils/soundEffects';
 import { authService } from '../../services/authService';
+import { userDataService } from '../../services/userDataService';
 import { progressService, type LessonRewardResult } from '../../services/progressService';
 import { miniGameService, type MiniGame } from '../../services/miniGameService';
 import { courseService } from '../../services/courseService';
@@ -418,7 +419,11 @@ export default function MiniGame() {
         const lessonAge = Number(lessonDetail.lesson.target_age || lessonDetail.lesson.age_group || 0);
         const user = authService.getCurrentUser();
         const accountAge = Number(user.age_group);
-        const maxInteractiveAge = Number.isInteger(accountAge)
+        const preferences = await userDataService.getPreferences().catch(() => null);
+        const unlockedAge = Number(preferences?.unlocked_age);
+        const maxInteractiveAge = Number.isInteger(accountAge) && Number.isInteger(unlockedAge)
+          ? Math.max(accountAge, unlockedAge)
+          : Number.isInteger(accountAge)
           ? Math.max(3, Math.min(8, accountAge))
           : 3;
 

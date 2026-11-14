@@ -12,7 +12,8 @@ import type { PronunciationAttempt, SpeakingSummary } from '../../services/speak
 import FireworksCelebration from '../../components/FireworksCelebration';
 import RewardPopup from '../../components/RewardPopup';
 
-const PRONUNCIATION_PASS_SCORE = 70;
+// Ngưỡng đạt dành cho trẻ nhỏ: chỉ cần mức tương đồng từ 50% trở lên.
+const PRONUNCIATION_PASS_SCORE = 50;
 
 interface WordItem {
   id: number;
@@ -604,7 +605,10 @@ export default function SpeakingAI() {
     // Backend đã có lượt thử lại không dùng VAD cho các âm đơn rất ngắn.
     recorder.start();
     const wordCount = currentItem.word.trim().split(/\s+/).filter(Boolean).length;
-    const recordingDuration = wordCount === 1 ? 3000 : 5000;
+    // Tự dừng sớm hơn sau khi bé nói xong; bé vẫn có thể chạm micro để dừng ngay.
+    const recordingDuration = wordCount <= 1
+      ? 1800
+      : Math.min(4000, 1300 + wordCount * 500);
     recordingTimerRef.current = window.setTimeout(() => {
       if (mediaRecorderRef.current === recorder && recorder.state === 'recording') recorder.stop();
     }, recordingDuration);

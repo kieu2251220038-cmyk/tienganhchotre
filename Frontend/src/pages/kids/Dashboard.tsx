@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { courseService } from '../../services/courseService';
 import { progressService, type ChestRewardResult, type ChestStatus } from '../../services/progressService';
 import { authService } from '../../services/authService';
+import { userDataService } from '../../services/userDataService';
 import type { Course, Lesson, UserRewardsData } from '../../types';
 import { sounds } from '../../utils/soundEffects';
 import ChestRewardModal from '../../components/kids/ChestRewardModal';
@@ -76,7 +77,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const user = authService.getCurrentUser();
   const accountAge = getAge(user.age_group);
-  const hasAllAgeAccess = accountAge >= 8;
+  const [unlockedAge, setUnlockedAge] = useState(accountAge);
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
   const [levels, setLevels] = useState<LevelTab[]>([]);
   const [lessons, setLessons] = useState<LessonWithTopic[]>([]);
@@ -90,9 +91,11 @@ export default function Dashboard() {
 
   const currentLevel = levels.find((level) => level.courseId === selectedCourseId) || levels[0] || EMPTY_LEVEL;
   const selectedAge = currentLevel.age;
+  const interactiveAge = Math.max(accountAge, unlockedAge);
+  const hasAllAgeAccess = interactiveAge >= 8;
   const completedIds = useMemo(() => new Set((rewards?.completed_lessons || []).map((item) => Number(item.lesson_id))), [rewards]);
   const isComplete = (lesson: LessonWithTopic) => completedIds.has(lesson.id) || Boolean(lesson.is_completed);
-  const canAccessInteractive = hasAllAgeAccess || selectedAge <= accountAge;
+  const canAccessInteractive = hasAllAgeAccess || selectedAge <= interactiveAge;
   const isAvailableLesson = (lesson: LessonWithTopic) => isStudyLesson(lesson) || canAccessInteractive;
 
   const stages = useMemo<PathStage[]>(() => {
@@ -182,11 +185,29 @@ export default function Dashboard() {
 
   useEffect(() => {
     let mounted = true;
+    userDataService.getPreferences()
+      .then((preferences) => {
+        if (!mounted) return;
+        const preferenceAge = getAge(preferences.unlocked_age, accountAge);
+        setUnlockedAge((currentAge) => Math.max(currentAge, accountAge, preferenceAge));
+      })
+      .catch(() => {
+        // Giữ quyền mặc định theo độ tuổi tài khoản nếu chưa tải được thiết lập.
+      });
+    return () => { mounted = false; };
+  }, [accountAge, user.id]);
+
+  useEffect(() => {
+    let mounted = true;
     setChestStatus(null);
     setChestError('');
     progressService.getChestStatus(selectedAge)
       .then((status) => {
-        if (mounted) setChestStatus(status);
+        if (!mounted) return;
+        setChestStatus(status);
+        if (status.claimed && selectedAge < 8) {
+          setUnlockedAge((currentAge) => Math.max(currentAge, selectedAge + 1));
+        }
       })
       .catch((requestError) => {
         console.error('Không thể tải trạng thái rương:', requestError);
@@ -224,6 +245,10 @@ export default function Dashboard() {
         rewardCoins: result.rewardCoins,
         claimedAt: new Date().toISOString()
       }));
+      if (result.nextAge) {
+        setUnlockedAge((currentAge) => Math.max(currentAge, result.nextAge || currentAge));
+        void userDataService.updatePreferences({ unlocked_age: result.nextAge }).catch(() => undefined);
+      }
     } catch (requestError) {
       console.error('Không thể mở rương:', requestError);
       setChestError('Chưa thể mở rương lúc này. Bé hãy thử lại nhé.');
@@ -271,7 +296,7 @@ export default function Dashboard() {
             <div className="classic-level-progress"><span>Tiến độ bậc:</span><strong>{completedStages} / {stages.length || 0} Chặng ✓</strong></div>
           </section>
 
-          <div className="classic-roadmap-note">📚 <span><strong>{studyLessons.length || 0} bài học kiến thức</strong> trong bậc này. {hasAllAgeAccess ? 'Tài khoản 8 tuổi được mở toàn bộ bài học, Nói, Quiz và Game của mọi độ tuổi.' : selectedAge > accountAge ? `Bé có thể học trước bài học kiến thức; Nói, Quiz và Game chỉ mở đến Bậc ${accountAge} tuổi.` : 'Trong Bậc này, bé có thể học bài và hoạt động; khi học vượt lên Bậc cao hơn chỉ bài học kiến thức được mở.'}</span> ✨</div>
+          <div className="classic-roadmap-note">📚 <span><strong>{studyLessons.length || 0} bài học kiến thức</strong> trong bậc này. {hasAllAgeAccess ? 'Tài khoản đã được mở toàn bộ bài học, Nói, Quiz và Game của mọi độ tuổi.' : selectedAge > interactiveAge ? `Bé có thể học trước bài học kiến thức; Nói, Quiz và Game chỉ mở đến Bậc ${interactiveAge} tuổi.` : 'Trong Bậc này, bé có thể học bài và hoạt động; khi học vượt lên Bậc cao hơn chỉ bài học kiến thức được mở.'}</span> ✨</div>
 
           {loading ? <div className="classic-roadmap-message">Đang tải lộ trình từ Backend...</div> : error ? <div className="classic-roadmap-message is-error">{error}{currentLevel && <button onClick={() => void loadGrade(currentLevel.courseId)}>Thử lại</button>}</div> : (
             <section className="classic-path" aria-label="Các chặng học">
@@ -318,7 +343,7 @@ export default function Dashboard() {
               <section className={`classic-treasure ${allComplete ? 'is-open' : ''}`}>
                 <div className="classic-treasure-icon">{allComplete ? '🎁' : '🔒'}</div>
                 <h2>{allComplete ? `Rương Quà Bậc ${selectedAge} Tuổi` : 'Rương Quà Cuối Bậc'}</h2>
-                <p>{allComplete ? (hasAllAgeAccess ? 'Bé đã hoàn thành toàn bộ hoạt động của bậc này!' : 'Bé đã hoàn thành phần được mở của bậc này. Các bậc cao hơn vẫn chỉ mở bài học kiến thức.') : 'Hãy hoàn thành các phần được mở của tất cả các chặng để mở rương.'}</p>
+                <p>{allComplete ? (canAccessInteractive ? 'Bé đã hoàn thành toàn bộ hoạt động của bậc này!' : 'Bé đã hoàn thành phần được mở của bậc này. Các bậc cao hơn vẫn chỉ mở bài học kiến thức.') : 'Hãy hoàn thành các phần được mở của tất cả các chặng để mở rương.'}</p>
                 {chestError && <div style={{ color: '#B42323', fontSize: '13px', fontWeight: 700, marginBottom: '10px' }}>{chestError}</div>}
                 {allComplete && (
                   <button onClick={() => void openChest()} disabled={chestLoading || Boolean(chestStatus?.claimed)}>
@@ -341,8 +366,8 @@ export default function Dashboard() {
 
           <section className="classic-side-card classic-level-card">
             <h2>Lộ Trình Bậc Học 🎯</h2>
-            <p>{hasAllAgeAccess ? 'Tài khoản 8 tuổi đã mở toàn bộ nội dung của mọi bậc.' : `Tài khoản ${accountAge} tuổi có thể học trước bài học; hoạt động tương tác chỉ mở đến Bậc ${accountAge} tuổi.`}</p>
-            <div className="classic-side-progress"><span style={{ width: `${Math.min(100, ((accountAge - 2) / 6) * 100)}%` }} /></div>
+            <p>{hasAllAgeAccess ? 'Tài khoản đã mở toàn bộ nội dung của mọi bậc.' : `Tài khoản ${accountAge} tuổi đã mở hoạt động tương tác đến Bậc ${interactiveAge} tuổi; các bậc cao hơn chỉ mở bài học kiến thức.`}</p>
+            <div className="classic-side-progress"><span style={{ width: `${Math.min(100, ((interactiveAge - 2) / 6) * 100)}%` }} /></div>
             <Link to="/dashboard">Về Trang Chủ 🏠</Link>
           </section>
 
@@ -354,7 +379,7 @@ export default function Dashboard() {
 
           <section className="classic-side-card classic-locked-card">
             <h2>Góc Tương Tác 🔒</h2>
-            <p>{hasAllAgeAccess ? 'Tài khoản 8 tuổi được chơi và luyện tập toàn bộ nội dung của mọi độ tuổi.' : `Bậc cao hơn Bậc ${accountAge} chỉ mở bài học kiến thức; Nói AI, Quiz và Game không được học vượt.`}</p>
+            <p>{hasAllAgeAccess ? 'Tài khoản được chơi và luyện tập toàn bộ nội dung của mọi độ tuổi.' : `Bậc cao hơn Bậc ${interactiveAge} chỉ mở bài học kiến thức; Nói AI, Quiz và Game không được học vượt.`}</p>
           </section>
         </aside>
       </div>

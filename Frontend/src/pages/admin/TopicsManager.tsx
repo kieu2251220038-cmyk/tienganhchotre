@@ -17,6 +17,8 @@ export default function TopicsManager() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [message, setMessage] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Form states
   const [name, setName] = useState('');
@@ -104,6 +106,22 @@ export default function TopicsManager() {
     }
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchQuery(searchTerm.trim().toLowerCase());
+  };
+
+  const filteredTopics = topics.filter((topic) => {
+    if (!searchQuery) return true;
+    return [
+      String(topic.id),
+      topic.name,
+      topic.course_title || '',
+      topic.description || '',
+      String(topic.age_group || '')
+    ].some((value) => value.toLowerCase().includes(searchQuery));
+  });
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       {/* Header */}
@@ -161,6 +179,23 @@ export default function TopicsManager() {
         overflow: 'hidden',
         boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)'
       }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '12px 20px', borderBottom: '1px solid #E2E8F0' }}>
+          <form onSubmit={handleSearch} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Tìm chủ đề..."
+              aria-label="Tìm kiếm chủ đề"
+              style={{ minWidth: '220px', padding: '8px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', color: '#475569', fontWeight: 600 }}
+            />
+            <button
+              type="submit"
+              style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', backgroundColor: '#0284C7', color: '#FFFFFF', fontWeight: 700, cursor: 'pointer' }}
+            >
+              🔍 Tìm kiếm
+            </button>
+          </form>
+        </div>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
           <thead>
             <tr style={{ backgroundColor: '#F8FAFC', borderBottom: '1px solid #E2E8F0', color: '#475569', fontWeight: 800 }}>
@@ -182,8 +217,14 @@ export default function TopicsManager() {
                   Chưa có chủ đề nào trong CSDL. Hãy bấm "+ Thêm Chủ Đề Mới" để tạo!
                 </td>
               </tr>
+            ) : filteredTopics.length === 0 ? (
+              <tr>
+                <td colSpan={9} style={{ padding: '40px', textAlign: 'center', color: '#94A3B8' }}>
+                  Không tìm thấy chủ đề phù hợp.
+                </td>
+              </tr>
             ) : (
-              topics.map((t) => (
+              filteredTopics.map((t) => (
                 <tr key={t.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
                   <td style={{ padding: '16px 20px', fontWeight: 700, color: '#94A3B8' }}>
                     #{t.id}

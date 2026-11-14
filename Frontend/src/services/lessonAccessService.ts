@@ -1,5 +1,6 @@
 import { courseService } from './courseService';
 import { authService } from './authService';
+import { userDataService } from './userDataService';
 import type { Lesson } from '../types';
 
 export type RestrictedLessonMode = 'SPEAKING' | 'QUIZ' | 'GAME';
@@ -30,12 +31,14 @@ export const lessonAccessService = {
 
     const user = authService.getCurrentUser();
     const accountAge = normalizeAge(user.age_group);
+    const preferences = await userDataService.getPreferences().catch(() => null);
+    const unlockedAge = normalizeAge(preferences?.unlocked_age, accountAge);
+    const maxInteractiveAge = Math.max(accountAge, unlockedAge);
     const lessonAge = normalizeAge(lesson.target_age || lesson.age_group, 0);
 
-    // Tài khoản 8 tuổi được mở toàn bộ hoạt động của mọi bậc.
-    // Các tài khoản nhỏ hơn chỉ được học trước FLASHCARD/VIDEO;
-    // Nói, Quiz và Game chỉ mở trong bậc không cao hơn tuổi tài khoản.
-    if (accountAge >= 8 || (lessonAge > 0 && lessonAge <= accountAge)) {
+    // Tài khoản đã mở đến bậc nào thì được dùng toàn bộ hoạt động trong các bậc đó.
+    // Các bậc cao hơn chỉ được học trước FLASHCARD/VIDEO.
+    if (maxInteractiveAge >= 8 || (lessonAge > 0 && lessonAge <= maxInteractiveAge)) {
       return {
         allowed: true,
         lesson
@@ -46,7 +49,7 @@ export const lessonAccessService = {
     return {
       allowed: false,
       lesson,
-      message: `Phần ${modeLabel} của Bậc ${lessonAge || '?'} tuổi chưa mở. Tài khoản ${accountAge} tuổi chỉ được học trước bài học kiến thức; hoạt động này không được học vượt.`
+      message: `Phần ${modeLabel} của Bậc ${lessonAge || '?'} tuổi chưa mở. Tài khoản ${accountAge} tuổi chỉ được học trước bài học kiến thức; hoạt động tương tác chỉ mở đến Bậc ${maxInteractiveAge} tuổi.`
     };
   }
 };

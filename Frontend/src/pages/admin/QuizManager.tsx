@@ -196,10 +196,6 @@ export default function QuizManager() {
         </div>
       )}
 
-      <div style={{ backgroundColor: '#EFF6FF', border: '1.5px solid #BFDBFE', borderRadius: '16px', padding: '16px 20px', color: '#1E40AF', fontSize: '14px', lineHeight: 1.6 }}>
-        <strong>➕ Thêm nhiều câu hỏi cho một chặng:</strong> trước hết chọn bài có loại <strong>QUIZ</strong> thuộc đúng chặng, sau đó bấm “Tạo Câu Hỏi Mới”. Mỗi lần lưu sẽ thêm một câu mới vào bộ quiz của chặng đó.
-      </div>
-
       {/* Questions List */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {questions.map((q) => (

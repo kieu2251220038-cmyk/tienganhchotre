@@ -1,13 +1,30 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { courseService } from '../../services/courseService';
+import { progressService } from '../../services/progressService';
+import { authService } from '../../services/authService';
 import type { Course, Topic } from '../../types';
 import { sounds } from '../../utils/soundEffects';
+
+type TopicProgress = {
+  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
+  label: string;
+  color: string;
+  percent: number;
+};
+
+const EMPTY_TOPIC_PROGRESS: TopicProgress = {
+  status: 'NOT_STARTED',
+  label: 'Chưa học',
+  color: '#94A3B8',
+  percent: 0
+};
 
 export default function Topics() {
   const navigate = useNavigate();
   const [courses, setCourses] = useState<Course[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
+  const [topicProgress, setTopicProgress] = useState<Record<number, TopicProgress>>({});
   const [selectedCourseId, setSelectedCourseId] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [coursesLoading, setCoursesLoading] = useState(true);
@@ -31,7 +48,67 @@ export default function Topics() {
       .finally(() => setTopicsLoading(false));
   }, [selectedCourseId]);
 
-  const getTopicProgress = (_id: number) => ({ status: 'NOT_STARTED', label: 'Chưa học', color: '#94A3B8', percent: 0 });
+  useEffect(() => {
+    let mounted = true;
+
+    if (topics.length === 0) {
+      setTopicProgress({});
+      return () => { mounted = false; };
+    }
+
+    const user = authService.getCurrentUser();
+    Promise.all([
+      progressService.getUserRewards(user.id),
+      Promise.all(topics.map((topic) => courseService.getLessonsByTopic(topic.id)))
+    ])
+      .then(([rewards, lessonsByTopic]) => {
+        const completedLessonIds = new Set(
+          (rewards.completed_lessons || [])
+            .filter((lesson) => lesson.status === 'COMPLETED')
+            .map((lesson) => Number(lesson.lesson_id))
+        );
+
+        const nextProgress = topics.reduce<Record<number, TopicProgress>>((result, topic, index) => {
+          const lessons = lessonsByTopic[index] || [];
+          const completedCount = lessons.filter((lesson) => (
+            completedLessonIds.has(Number(lesson.id)) || Boolean(lesson.is_completed)
+          )).length;
+          const percent = lessons.length
+            ? Math.min(100, Math.round((completedCount / lessons.length) * 100))
+            : 0;
+          const status = lessons.length > 0 && completedCount >= lessons.length
+            ? 'COMPLETED'
+            : completedCount > 0
+              ? 'IN_PROGRESS'
+              : 'NOT_STARTED';
+
+          result[topic.id] = {
+            status,
+            label: status === 'COMPLETED'
+              ? 'Đã hoàn thành'
+              : status === 'IN_PROGRESS'
+                ? 'Đang học'
+                : 'Chưa học',
+            color: status === 'COMPLETED'
+              ? '#58CC02'
+              : status === 'IN_PROGRESS'
+                ? '#1CB0F6'
+                : '#94A3B8',
+            percent
+          };
+          return result;
+        }, {});
+
+        if (mounted) setTopicProgress(nextProgress);
+      })
+      .catch(() => {
+        if (mounted) setTopicProgress({});
+      });
+
+    return () => { mounted = false; };
+  }, [topics]);
+
+  const getTopicProgress = (id: number) => topicProgress[id] || EMPTY_TOPIC_PROGRESS;
   const filteredTopics = topics.filter((topic) => selectedStatus === 'all' || getTopicProgress(topic.id).status === selectedStatus);
   const loading = coursesLoading || topicsLoading;
 

@@ -176,10 +176,6 @@ export default function MiniGameManager() {
         </div>
       )}
 
-      <div style={{ background: '#EFF6FF', border: '1.5px solid #BFDBFE', borderRadius: '16px', padding: '16px 20px', color: '#1E40AF', fontSize: '14px', lineHeight: 1.6 }}>
-        <strong>➕ Cách thêm trò chơi vào chặng:</strong> bấm “Tạo Mini Game”, chọn đúng Chặng 1 A-J, Chặng 2 K-T hoặc Chặng 3 U-Z, chọn kiểu chơi rồi lưu. Hệ thống sẽ tự tạo một bài GAME ở cuối chặng và bé sẽ thấy nút chơi trong lộ trình.
-      </div>
-
       {loading ? (
         <div style={{ padding: '48px', textAlign: 'center', background: '#FFF', borderRadius: '16px', color: '#64748B', fontWeight: 700 }}>Đang tải mini game từ CSDL...</div>
       ) : games.length === 0 ? (

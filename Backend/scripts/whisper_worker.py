@@ -111,15 +111,20 @@ def transcribe(request: dict[str, Any]) -> dict[str, Any]:
 
     try:
         letter_exercise = is_letter_exercise(str(request.get("targetText", "")))
+        try:
+            beam_size = max(1, min(5, int(os.getenv("WHISPER_BEAM_SIZE", "1"))))
+        except ValueError:
+            beam_size = 1
+
         transcription_options: dict[str, Any] = {
             "language": os.getenv("WHISPER_LANGUAGE", "en"),
-            "beam_size": 5,
+            "beam_size": beam_size,
             "temperature": 0.0,
             "compression_ratio_threshold": 2.4,
             "log_prob_threshold": -1.0,
             "no_speech_threshold": 0.6,
             "vad_filter": True,
-            "vad_parameters": {"min_silence_duration_ms": 250},
+            "vad_parameters": {"min_silence_duration_ms": 150},
             "condition_on_previous_text": False,
             "without_timestamps": True,
         }

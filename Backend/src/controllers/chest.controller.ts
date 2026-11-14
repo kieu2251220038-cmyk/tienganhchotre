@@ -15,8 +15,25 @@ function normalizeAge(value: unknown): number | null {
 }
 
 async function getAccountAge(connection: any, userId: number): Promise<number> {
-    const [rows]: any = await connection.query('SELECT age_group FROM users WHERE id = ?', [userId]);
-    return normalizeAge(rows[0]?.age_group) || 3;
+    const [rows]: any = await connection.query(
+        `SELECT u.age_group, COALESCE(up.unlocked_age, 0) AS unlocked_age
+         FROM users u
+         LEFT JOIN user_preferences up ON up.user_id = u.id
+         WHERE u.id = ?`,
+        [userId]
+    );
+    const accountAge = normalizeAge(rows[0]?.age_group) || 3;
+    const unlockedAge = normalizeAge(rows[0]?.unlocked_age) || accountAge;
+    return Math.max(accountAge, unlockedAge);
+}
+
+async function unlockNextAge(connection: any, userId: number, nextAge: number): Promise<void> {
+    await connection.query(
+        `INSERT INTO user_preferences (user_id, unlocked_age)
+         VALUES (?, ?)
+         ON DUPLICATE KEY UPDATE unlocked_age = GREATEST(unlocked_age, VALUES(unlocked_age))`,
+        [userId, nextAge]
+    );
 }
 
 async function getChestProgress(connection: any, userId: number, ageGroup: number, accountAge: number) {
@@ -82,6 +99,9 @@ export const getChestStatus = async (req: Request, res: Response): Promise<void>
         );
         const claim = claims[0];
 
+        // Đồng bộ các tài khoản đã mở rương trước khi cơ chế mở khóa được lưu đầy đủ.
+        if (claim && ageGroup < 8) await unlockNextAge(pool, userId, ageGroup + 1);
+
         res.status(200).json({
             ageGroup,
             eligible: progress.totalLessons > 0 && progress.completedLessons >= progress.totalLessons,
@@ -126,6 +146,8 @@ export const claimChest = async (req: Request, res: Response): Promise<void> => 
              VALUES (?, ?, ?, ?)`,
             [userId, ageGroup, CHEST_REWARD_STARS, CHEST_REWARD_COINS]
         );
+        const nextAge = ageGroup < 8 ? ageGroup + 1 : null;
+        if (nextAge) await unlockNextAge(connection, userId, nextAge);
 
         if (Number(insertResult.affectedRows) === 0) {
             const totals = await getRewardTotals(connection, userId);
@@ -138,7 +160,7 @@ export const claimChest = async (req: Request, res: Response): Promise<void> => 
                 rewardStars: 0,
                 rewardCoins: 0,
                 ...totals,
-                nextAge: ageGroup < 8 ? ageGroup + 1 : null,
+                nextAge,
                 levelUpMessage: buildLevelMessage(ageGroup)
             });
             return;
@@ -163,7 +185,7 @@ export const claimChest = async (req: Request, res: Response): Promise<void> => 
             rewardStars: CHEST_REWARD_STARS,
             rewardCoins: CHEST_REWARD_COINS,
             ...totals,
-            nextAge: ageGroup < 8 ? ageGroup + 1 : null,
+            nextAge,
             levelUpMessage: buildLevelMessage(ageGroup)
         });
     } catch (error) {

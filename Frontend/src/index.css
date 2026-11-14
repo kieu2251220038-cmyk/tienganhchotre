@@ -830,10 +830,14 @@ h1, h2, h3, h4, h5, h6 {
   gap: 10px;
   overflow-x: auto;
   padding: 4px 0 14px;
-  scrollbar-width: none;
+  scrollbar-width: thin;
+  scrollbar-color: #10b981 #dce5ec;
 }
 
-.classic-age-tabs::-webkit-scrollbar { display: none; }
+.classic-age-tabs::-webkit-scrollbar { height: 8px; }
+.classic-age-tabs::-webkit-scrollbar-track { background: #dce5ec; border-radius: 999px; }
+.classic-age-tabs::-webkit-scrollbar-thumb { background: #10b981; border-radius: 999px; }
+.classic-age-tabs::-webkit-scrollbar-thumb:hover { background: #08784e; }
 
 .classic-age-tabs button {
   flex: 0 0 auto;

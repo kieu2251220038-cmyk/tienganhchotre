@@ -16,6 +16,8 @@ export default function Lessons() {
   const [topics, setTopics] = useState<AdminTopic[]>([]);
   const [typeFilter, setTypeFilter] = useState('ALL');
   const [topicFilter, setTopicFilter] = useState('ALL');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [message, setMessage] = useState('');
@@ -137,9 +139,18 @@ export default function Lessons() {
     }
   };
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchQuery(searchTerm.trim().toLowerCase());
+  };
+
   const filtered = lessons.filter((l) =>
     (typeFilter === 'ALL' || l.lesson_type === typeFilter) &&
-    (topicFilter === 'ALL' || String(l.topic_id) === topicFilter)
+    (topicFilter === 'ALL' || String(l.topic_id) === topicFilter) &&
+    (!searchQuery ||
+      String(l.id).includes(searchQuery) ||
+      l.title.toLowerCase().includes(searchQuery) ||
+      (l.topic_name || '').toLowerCase().includes(searchQuery))
   );
   const selectableTopics = topics.filter((topic) => topic.status === 'PUBLISHED' || String(topic.age_group) !== '3');
 
@@ -191,18 +202,6 @@ export default function Lessons() {
         </div>
       )}
 
-      <div style={{
-        backgroundColor: '#EFF6FF',
-        border: '1.5px solid #BFDBFE',
-        borderRadius: '16px',
-        padding: '16px 20px',
-        color: '#1E40AF',
-        fontSize: '14px',
-        lineHeight: 1.6
-      }}>
-        <strong>➕ Cách thêm bài vào từng chặng:</strong> bấm “Tạo Bài Học Mới”, chọn đúng chặng trong ô Chủ đề, rồi chọn loại bài Học chữ hoặc Quiz. Nếu muốn thêm trò chơi, hãy vào <strong>Quản Lý Mini Game</strong> để hệ thống tự tạo bài Game và nối đúng vào chặng.
-      </div>
-
       {/* Filter Tabs */}
       <div style={{
         display: 'flex',
@@ -230,6 +229,21 @@ export default function Lessons() {
             {t === 'ALL' ? 'Tất Cả Loại' : t}
           </button>
         ))}
+        <form onSubmit={handleSearch} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '12px' }}>
+          <input
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Tìm bài học..."
+            aria-label="Tìm kiếm bài học"
+            style={{ minWidth: '190px', padding: '8px 12px', borderRadius: '8px', border: '1px solid #CBD5E1', color: '#475569', fontWeight: 600 }}
+          />
+          <button
+            type="submit"
+            style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', backgroundColor: '#0284C7', color: '#FFFFFF', fontWeight: 700, cursor: 'pointer' }}
+          >
+            🔍 Tìm kiếm
+          </button>
+        </form>
         <select
           value={topicFilter}
           onChange={(e) => setTopicFilter(e.target.value)}
