@@ -31,8 +31,10 @@ export const getLessonsByTopic = async (req: Request, res: Response): Promise<vo
     const { topicId } = req.params;
     try {
         const [lessons] = await pool.query(
-            `SELECT l.*, u_rev.display_name AS reviewer_name
+            `SELECT l.*, c.age_group AS age_group, u_rev.display_name AS reviewer_name
              FROM lessons l
+             JOIN topics t ON t.id = l.topic_id
+             JOIN courses c ON c.id = t.course_id
              LEFT JOIN mini_games mg ON mg.id = l.mini_game_id
              LEFT JOIN users u_rev ON l.reviewed_by = u_rev.id
              WHERE l.topic_id = ?
