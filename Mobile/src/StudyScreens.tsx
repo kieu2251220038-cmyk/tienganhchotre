@@ -11,8 +11,60 @@ type Props = { lesson: LessonWithProgress; user: MobileUser; onBack: () => void 
 const colors = { bg: '#EEF5F9', navy: '#17324D', blue: '#0284C7', green: '#10B981', greenDark: '#08784E', yellow: '#F5B700', border: '#DCE6ED', muted: '#6B8194', white: '#FFFFFF', red: '#B42323' };
 const speak = (text: string) => Speech.speak(text, { language: 'en-US', rate: 0.78 });
 
+const AGE_SENTENCES: Record<number, Record<string, string>> = {
+  5: { Father: 'This is my father.', Mother: 'This is my mother.', Sister: 'This is my sister.', Brother: 'This is my brother.', Head: 'This is my head.', Eyes: 'I have two eyes.', Nose: 'This is my nose.', Mouth: 'This is my mouth.', Hands: 'These are my hands.', Happy: 'I am happy.', Sad: 'I am sad.', Angry: 'I am angry.', Tired: 'I am tired.' },
+  6: { Hello: 'Hello, my name is Anna.', Goodbye: 'Goodbye, see you soon.', 'Good morning': 'Good morning, teacher.', 'Good afternoon': 'Good afternoon, teacher.', Name: 'My name is Anna.', Age: 'I am six years old.', Six: 'I am six years old.', Friend: 'This is my friend.', Pencil: 'This is my pencil.', Notebook: 'I have a blue notebook.', Ruler: 'This is my ruler.', Eraser: 'This is my eraser.', What: 'What is this?', Color: 'What color is it?', This: 'This is a book.', That: 'That is a school bag.' },
+  7: { 'Wake up': 'I wake up at seven.', 'Brush teeth': 'I brush my teeth every morning.', 'Eat breakfast': 'I eat breakfast in the morning.', 'Go to school': 'I go to school every day.', Sunny: 'It is sunny today.', Rainy: 'It is rainy today.', Cloudy: 'It is cloudy today.', Windy: 'It is windy today.', Milk: 'I would like some milk.', Bread: 'I eat bread for breakfast.', Rice: 'I like rice.', Egg: 'I would like an egg.' },
+  8: { Teacher: 'A teacher helps children learn.', Doctor: 'A doctor helps sick people.', Farmer: 'A farmer grows food.', Pilot: 'A pilot flies an airplane.', Tree: 'The tree is tall and green.', River: 'The river flows through the forest.', Mountain: 'The mountain is high.', Forest: 'Many animals live in the forest.' }
+};
+
+const AGE_MEANINGS: Record<number, Record<string, string>> = {
+  7: { 'Wake up': 'Tôi thức dậy lúc bảy giờ.', 'Brush teeth': 'Tôi đánh răng mỗi buổi sáng.', 'Eat breakfast': 'Tôi ăn sáng vào buổi sáng.', 'Go to school': 'Tôi đi học mỗi ngày.', Sunny: 'Hôm nay trời có nắng.', Rainy: 'Hôm nay trời có mưa.', Cloudy: 'Hôm nay trời nhiều mây.', Windy: 'Hôm nay trời có gió.', Milk: 'Tôi muốn uống một ít sữa.', Bread: 'Tôi ăn bánh mì vào bữa sáng.', Rice: 'Tôi thích cơm.', Egg: 'Tôi muốn một quả trứng.' },
+  8: { Teacher: 'Giáo viên giúp trẻ em học tập.', Doctor: 'Bác sĩ giúp những người bị bệnh.', Farmer: 'Nông dân trồng lương thực.', Pilot: 'Phi công lái máy bay.', Tree: 'Cây cao và xanh.', River: 'Dòng sông chảy qua khu rừng.', Mountain: 'Ngọn núi rất cao.', Forest: 'Nhiều loài động vật sống trong rừng.' }
+};
+
+const ageNumber = (lesson: Lesson, user?: MobileUser) => Number(lesson.target_age || user?.age_group || 3) || 3;
+
+function normalizeSpeech(value: string): string {
+  return value.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function levenshtein(left: string, right: string): number {
+  const row = Array.from({ length: right.length + 1 }, (_, index) => index);
+  for (let i = 1; i <= left.length; i += 1) {
+    let diagonal = row[0];
+    row[0] = i;
+    for (let j = 1; j <= right.length; j += 1) {
+      const above = row[j];
+      row[j] = left[i - 1] === right[j - 1] ? diagonal : Math.min(diagonal + 1, row[j] + 1, row[j - 1] + 1);
+      diagonal = above;
+    }
+  }
+  return row[right.length];
+}
+
+function speechScore(target: string, spoken: string, phonemeScore?: number | null): number {
+  const expected = normalizeSpeech(target);
+  const actual = normalizeSpeech(spoken);
+  if (!actual) return 0;
+  if (expected.length === 1) {
+    const aliases: Record<string, string[]> = { a: ['a', 'ay'], b: ['b', 'bee', 'be'], c: ['c', 'see', 'sea'], d: ['d', 'dee', 'di'], e: ['e', 'ee'], f: ['f', 'ef'], g: ['g', 'gee'], h: ['h', 'aitch'], i: ['i', 'eye'], j: ['j', 'jay'], k: ['k', 'kay'], l: ['l', 'el'], m: ['m', 'em'], n: ['n', 'en'], o: ['o', 'oh'], p: ['p', 'pee'], q: ['q', 'cue'], r: ['r', 'are'], s: ['s', 'ess'], t: ['t', 'tee'], u: ['u', 'you'], v: ['v', 'vee'], w: ['w', 'double you'], x: ['x', 'ex'], y: ['y', 'why'], z: ['z', 'zee', 'zed'] };
+    const accepted = new Set([expected, ...(aliases[expected] || []), `letter ${expected}`, `the letter ${expected}`]);
+    return accepted.has(actual) || actual.replace(/\s+/g, '') === expected ? 100 : 0;
+  }
+  const targetWords = expected.split(' ');
+  const spokenWords = actual.split(' ');
+  const aliases: Record<string, string[]> = { a: ['uh'], an: ['a', 'un'], are: ['r'], be: ['bee', 'b'], four: ['for'], i: ['eye', 'ai'], is: ['iz'], my: ['mai'], one: ['won'], see: ['sea', 'c'], six: ['siks'], that: ['dat'], the: ['thuh'], to: ['two', 'too'], two: ['to', 'too'], what: ['wut'], you: ['u'] };
+  const sameWord = (word: string, candidate: string) => word === candidate || (aliases[word] || []).includes(candidate) || (word.length >= 4 && candidate.length >= 4 && Math.round((1 - levenshtein(word, candidate) / Math.max(word.length, candidate.length)) * 100) >= 72);
+  const matched = targetWords.filter((word) => spokenWords.some((candidate) => sameWord(word, candidate))).length;
+  const textScore = Math.round((matched / Math.max(targetWords.length, 1)) * 70 + (matched / Math.max(spokenWords.length, 1)) * 30);
+  return typeof phonemeScore === 'number' ? Math.max(0, Math.min(textScore, Math.round(phonemeScore))) : textScore;
+}
+
+const shuffle = <T,>(items: T[]): T[] => [...items].sort(() => Math.random() - 0.5);
+
 function Header({ title, subtitle, onBack }: { title: string; subtitle: string; onBack: () => void }) {
-  return <View style={styles.header}><Pressable onPress={onBack} style={styles.back}><Text style={styles.backText}>← Trở về</Text></Pressable><View style={styles.headerCenter}><Text style={styles.headerTitle}>{title}</Text><Text style={styles.headerSub}>{subtitle}</Text></View><Text style={styles.headerIcon}>⭐</Text></View>;
+  return <View style={styles.header}><Pressable onPress={onBack} hitSlop={14} pressRetentionOffset={20} style={styles.back}><Text style={styles.backText}>← Trở về</Text></Pressable><View style={styles.headerCenter}><Text style={styles.headerTitle}>{title}</Text><Text style={styles.headerSub}>{subtitle}</Text></View><Text style={styles.headerIcon}>⭐</Text></View>;
 }
 
 function Loading() { return <View style={styles.center}><ActivityIndicator size="large" color={colors.blue} /><Text style={styles.muted}>Đang tải nội dung...</Text></View>; }
@@ -33,9 +85,9 @@ function FlashcardScreen({ lesson, user, onBack }: Props) {
     else { await mobileApi.completeLesson(lesson.id, 100).catch(() => undefined); setDone(true); }
   };
   if (busy) return <Loading />;
-  return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.page}>
+  return <SafeAreaView style={styles.safe}><ScrollView style={{ flex: 1 }} contentContainerStyle={styles.page} showsVerticalScrollIndicator persistentScrollbar nestedScrollEnabled>
     <Header title="🃏 Thẻ Từ Vựng Thông Minh" subtitle={`Từ số ${Math.min(index + 1, words.length || 1)} / ${words.length || 1}`} onBack={onBack} />
-    {message ? <Text style={styles.error}>{message}</Text> : done ? <View style={styles.completeCard}><Text style={styles.bigEmoji}>🎉</Text><Text style={styles.completeTitle}>Xuất sắc quá bé ơi!</Text><Text style={styles.completeText}>Bé đã hoàn thành bộ Flashcard và lưu tiến độ lên hệ thống.</Text><Pressable style={styles.primary} onPress={() => { setDone(false); setIndex(0); }}><Text style={styles.primaryText}>Học lại bộ này</Text></Pressable></View> : <>
+    {message ? <Text style={styles.error}>{message}</Text> : done ? <View style={styles.completeCard}><Text style={styles.bigEmoji}>🎉</Text><Text style={styles.completeTitle}>Xuất sắc quá bé ơi!</Text><Text style={styles.completeText}>Bé đã hoàn thành bộ Flashcard và lưu tiến độ lên hệ thống.</Text><Pressable style={styles.primary} onPress={() => { setDone(false); setIndex(0); }}><Text style={styles.primaryText}>Học lại bộ này</Text></Pressable><Pressable style={[styles.outline, { marginTop: 12, minWidth: 170 }]} onPress={onBack}><Text style={styles.outlineText}>← Về lộ trình</Text></Pressable></View> : <>
       <View style={styles.progressTrack}><View style={[styles.progressFill, { width: `${((index + 1) / Math.max(words.length, 1)) * 100}%` }]} /></View>
       <Pressable style={styles.flashCard} onPress={() => setFlipped(!flipped)}>
         <Text style={styles.cardHint}>{flipped ? '💡 Nghĩa tiếng Việt' : '👆 Chạm vào thẻ để lật xem nghĩa'}</Text>

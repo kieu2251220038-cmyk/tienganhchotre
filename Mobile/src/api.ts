@@ -131,5 +131,21 @@ export const mobileApi = {
     const data = await response.json().catch(() => null);
     if (!response.ok) throw new Error(data?.message || `API lỗi (${response.status})`);
     return data;
+  },
+
+  saveSpeakingSummary(summary: {
+    lessonId: number;
+    topicId: number;
+    completedAt: string;
+    totalWords: number;
+    averageScore: number;
+    correctCount: number;
+    incorrectCount: number;
+    attempts: Array<{ index: number; word: string; recognized: string; score: number; correct: boolean }>;
+  }): Promise<void> {
+    return request<void>('/user-data/speaking-summaries', {
+      method: 'POST',
+      body: JSON.stringify(summary)
+    });
   }
 };

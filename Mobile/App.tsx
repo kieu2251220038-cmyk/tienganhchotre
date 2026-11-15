@@ -13,7 +13,7 @@ import {
 import { mobileApi } from './src/api';
 import { API_BASE_URL } from './src/config';
 import ClassicRoadmapScreen from './src/ClassicRoadmapScreen';
-import StudyScreen, { ProfileScreen, RewardsScreen } from './src/StudyScreens';
+import StudyScreen, { ProfileScreen, RewardsScreen } from './src/StudyScreensV2';
 import type { CurriculumStage, Lesson, MobileUser } from './src/types';
 
 const AGE_OPTIONS = ['3', '4', '5', '6', '7', '8'];

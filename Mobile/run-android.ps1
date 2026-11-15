@@ -22,8 +22,8 @@ if (-not ($deviceLines | Select-String '\tdevice$')) {
   throw 'Chưa có Android Emulator/thiết bị ADB. Hãy mở emulator rồi chạy lại.'
 }
 
-& $adb reverse --remove tcp:5001 2>$null
-& $adb reverse --remove tcp:8083 2>$null
+# Ghi đè mapping hiện tại nếu có; không xóa mapping trước vì ADB sẽ báo lỗi
+# khi cổng chưa từng được reverse và làm script dừng giữa chừng.
 & $adb reverse tcp:5001 tcp:5001
 & $adb reverse tcp:8083 tcp:8083
 
