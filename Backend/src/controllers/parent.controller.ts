@@ -491,6 +491,72 @@ export const getChildPronunciationProgress = async (req: Request, res: Response)
     }
 };
 
+// Lấy toàn bộ lịch sử các phiên luyện nói của bé (chỉ phụ huynh sở hữu hồ sơ hoặc admin được xem)
+export const getChildPronunciationHistory = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { childId } = req.params;
+        const parentId = req.user!.id;
+        const userRole = req.user!.role;
+        const numericChildId = Number(childId);
+
+        if (!Number.isInteger(numericChildId) || numericChildId <= 0) {
+            res.status(400).json({ message: 'childId không hợp lệ.' });
+            return;
+        }
+
+        const isOwner = await verifyChildOwnership(parentId, numericChildId, userRole);
+        if (!isOwner) {
+            res.status(403).json({ message: 'Quyền truy cập bị từ chối: Hồ sơ trẻ này không thuộc quyền quản lý của bạn!' });
+            return;
+        }
+
+        const [sessionRows]: any = await pool.query(`
+            SELECT
+                ss.id,
+                ss.lesson_id,
+                ss.topic_id,
+                ss.completed_at,
+                ss.total_words,
+                ss.average_score,
+                ss.correct_count,
+                ss.incorrect_count,
+                l.title AS lesson_title,
+                t.name AS topic_name
+            FROM speaking_summaries ss
+            LEFT JOIN lessons l ON l.id = ss.lesson_id
+            LEFT JOIN topics t ON t.id = ss.topic_id
+            WHERE ss.user_id = ?
+            ORDER BY ss.completed_at DESC, ss.id DESC
+        `, [numericChildId]);
+
+        res.status(200).json({
+            childId: numericChildId,
+            sessions: sessionRows.map((row: any) => {
+                const totalWords = Number(row.total_words) || 0;
+                const correctCount = Number(row.correct_count) || 0;
+                return {
+                    id: Number(row.id),
+                    lessonId: Number(row.lesson_id),
+                    topicId: Number(row.topic_id),
+                    lessonTitle: row.lesson_title || 'Luyện nói AI',
+                    topicName: row.topic_name || 'Chủ đề chưa đặt tên',
+                    completedAt: row.completed_at,
+                    totalWords,
+                    averageScore: Math.round(Number(row.average_score) || 0),
+                    correctCount,
+                    incorrectCount: Number(row.incorrect_count) || 0,
+                    accuracyPercent: totalWords > 0
+                        ? Math.round((correctCount / totalWords) * 100)
+                        : 0
+                };
+            })
+        });
+    } catch (error) {
+        console.error('Lỗi khi lấy toàn bộ lịch sử phát âm của bé:', error);
+        res.status(500).json({ message: 'Không thể tải toàn bộ lịch sử phát âm của bé.' });
+    }
+};
+
 // 8. Cập nhật mục tiêu học tập (thời lượng khuyến khích hàng ngày - không khóa bài)
 export const updateStudyGoals = async (req: Request, res: Response): Promise<void> => {
     try {

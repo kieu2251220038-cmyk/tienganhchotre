@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import { parentService } from '../../services/parentService';
-import type { ParentChild, ChildOverview, ChildActivity, ChildSkill, ChildVocabularyProgress, ChildPronunciationProgress } from '../../types';
+import type { ParentChild, ChildOverview, ChildActivity, ChildSkill, ChildVocabularyProgress, ChildPronunciationProgress, ChildPronunciationSession } from '../../types';
 import speakingSummaryService from '../../services/speakingSummaryService';
 import type { SpeakingSummary } from '../../services/speakingSummaryService';
 import { sounds } from '../../utils/soundEffects';
@@ -18,7 +18,9 @@ export default function ParentDashboard() {
   const [skills, setSkills] = useState<ChildSkill[]>([]);
   const [vocabularyProgress, setVocabularyProgress] = useState<ChildVocabularyProgress | null>(null);
   const [pronunciationProgress, setPronunciationProgress] = useState<ChildPronunciationProgress | null>(null);
-  const [recommendations, setRecommendations] = useState<string[]>([]);
+  const [allPronunciationSessions, setAllPronunciationSessions] = useState<ChildPronunciationSession[] | null>(null);
+  const [showAllPronunciationHistory, setShowAllPronunciationHistory] = useState<boolean>(false);
+  const [loadingPronunciationHistory, setLoadingPronunciationHistory] = useState<boolean>(false);
   const [latestSpeakingSummary, setLatestSpeakingSummary] = useState<SpeakingSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -151,6 +153,8 @@ export default function ParentDashboard() {
   // 2. Tải chi tiết tiến độ khi chọn bé
   useEffect(() => {
     if (!selectedChildId) return;
+    setAllPronunciationSessions(null);
+    setShowAllPronunciationHistory(false);
     setLoading(true);
 
     Promise.all([
@@ -165,7 +169,6 @@ export default function ParentDashboard() {
         setNewGoalMinutes(ov.daily_goal_minutes || 15);
         setActivities(act);
         setSkills(sk.skills);
-        setRecommendations(sk.recommendations);
         setVocabularyProgress(vocab);
         setPronunciationProgress(pronunciation);
       })
@@ -194,6 +197,29 @@ export default function ParentDashboard() {
     } finally {
       setSavingGoal(false);
     }
+  };
+
+  const handleTogglePronunciationHistory = async () => {
+    if (showAllPronunciationHistory) {
+      setShowAllPronunciationHistory(false);
+      return;
+    }
+
+    if (allPronunciationSessions === null) {
+      setLoadingPronunciationHistory(true);
+      try {
+        const sessions = await parentService.getChildPronunciationHistory(selectedChildId);
+        setAllPronunciationSessions(sessions);
+      } catch (error) {
+        console.error('Lỗi tải toàn bộ lịch sử phát âm:', error);
+        showToast('❌ Không thể tải toàn bộ lịch sử luyện nói lúc này.');
+        return;
+      } finally {
+        setLoadingPronunciationHistory(false);
+      }
+    }
+
+    setShowAllPronunciationHistory(true);
   };
 
   const currentChild = children.find(c => c.id === selectedChildId) || overview?.child;
@@ -755,8 +781,8 @@ export default function ParentDashboard() {
             </div>
           </div>
 
-          {/* ================= ĐÁNH GIÁ 4 KỸ NĂNG & LỜI KHUYÊN CHUYÊN GIA ================= */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '20px' }}>
+          {/* ================= ĐÁNH GIÁ 4 KỸ NĂNG ================= */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px' }}>
             {/* Đánh giá 4 kỹ năng */}
             <div style={{
               backgroundColor: '#FFFFFF',
@@ -790,61 +816,6 @@ export default function ParentDashboard() {
               </div>
             </div>
 
-            {/* Lời khuyên chuyên gia giáo dục */}
-            <div style={{
-              backgroundColor: '#F5F3FF',
-              borderRadius: '24px',
-              padding: '24px',
-              border: '2px solid #C084FC',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '14px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '24px' }}>👩‍🏫</span>
-                <div>
-                  <h3 style={{ fontFamily: 'Fredoka, sans-serif', fontSize: '18px', fontWeight: 800, color: '#4C1D95' }}>
-                    Lời Khuyên Chuyên Gia Dành Cho Phụ Huynh
-                  </h3>
-                  <span style={{ fontSize: '12px', color: '#7C3AED', fontWeight: 600 }}>
-                    Từ TS. Minh Anh - Cố vấn sư phạm
-                  </span>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {recommendations.map((rec, idx) => (
-                  <div
-                    key={idx}
-                    style={{
-                      backgroundColor: '#FFFFFF',
-                      borderRadius: '12px',
-                      padding: '12px',
-                      fontSize: '13px',
-                      color: '#4C1D95',
-                      fontWeight: 600,
-                      lineHeight: 1.5,
-                      border: '1px solid #DDD6FE'
-                    }}
-                  >
-                    💡 {rec}
-                  </div>
-                ))}
-              </div>
-
-              <div style={{
-                marginTop: 'auto',
-                backgroundColor: '#EDE9FE',
-                borderRadius: '12px',
-                padding: '10px 14px',
-                fontSize: '12px',
-                color: '#5B21B6',
-                fontWeight: 700
-              }}>
-                💬 Cần hỗ trợ riêng? Phụ huynh có thể trao đổi thêm tại Góc Chuyên Gia để điều chỉnh lộ trình cho bé.
-              </div>
-            </div>
           </div>
 
           {latestSpeakingSummary && (
@@ -918,19 +889,40 @@ export default function ParentDashboard() {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', gap: '10px', flexWrap: 'wrap' }}>
-                <strong style={{ color: '#334155', fontSize: '15px' }}>Lịch sử luyện nói gần đây</strong>
-                <span style={{ color: '#64748B', fontSize: '12px' }}>
-                  Đúng {pronunciationProgress.correctAttempts} / {pronunciationProgress.totalAttempts} từ
-                </span>
+                <strong style={{ color: '#334155', fontSize: '15px' }}>
+                  {showAllPronunciationHistory ? 'Tất cả lịch sử luyện nói' : 'Lịch sử luyện nói gần đây'}
+                </strong>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <span style={{ color: '#64748B', fontSize: '12px' }}>
+                    Đúng {pronunciationProgress.correctAttempts} / {pronunciationProgress.totalAttempts} từ
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleTogglePronunciationHistory}
+                    disabled={loadingPronunciationHistory}
+                    style={{
+                      border: '1px solid #F59E0B',
+                      borderRadius: '10px',
+                      padding: '7px 11px',
+                      backgroundColor: '#FFFBEB',
+                      color: '#92400E',
+                      fontWeight: 800,
+                      fontSize: '12px',
+                      cursor: loadingPronunciationHistory ? 'wait' : 'pointer'
+                    }}
+                  >
+                    {loadingPronunciationHistory ? 'Đang tải...' : showAllPronunciationHistory ? 'Thu gọn' : 'Xem tất cả lịch sử'}
+                  </button>
+                </div>
               </div>
 
-              {pronunciationProgress.sessions.length === 0 ? (
+              {(showAllPronunciationHistory ? allPronunciationSessions || [] : pronunciationProgress.sessions).length === 0 ? (
                 <div style={{ padding: '20px', borderRadius: '12px', backgroundColor: '#FFFBEB', color: '#92400E', fontSize: '13px', textAlign: 'center' }}>
                   Bé chưa có phiên luyện nói nào. Hãy mở bài <strong>Nói AI</strong> để bắt đầu.
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {pronunciationProgress.sessions.map((session) => (
+                  {(showAllPronunciationHistory ? allPronunciationSessions || [] : pronunciationProgress.sessions).map((session) => (
                     <div key={session.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap', padding: '11px 13px', borderRadius: '12px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
                       <div>
                         <div style={{ color: '#1E293B', fontWeight: 800, fontSize: '14px' }}>{session.lessonTitle}</div>

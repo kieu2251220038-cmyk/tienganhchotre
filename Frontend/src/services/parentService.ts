@@ -1,5 +1,5 @@
 import API from './api';
-import type { ParentChild, ChildOverview, ChildActivity, ChildSkill, ChildVocabularyProgress, ChildPronunciationProgress } from '../types';
+import type { ParentChild, ChildOverview, ChildActivity, ChildSkill, ChildVocabularyProgress, ChildPronunciationProgress, ChildPronunciationSession } from '../types';
 
 export const parentService = {
   // Lấy danh sách con em của phụ huynh
@@ -48,6 +48,11 @@ export const parentService = {
   getChildPronunciationProgress: async (childId: number): Promise<ChildPronunciationProgress> => {
     const res = await API.get<ChildPronunciationProgress>(`/parent/child/${childId}/pronunciation-progress`);
     return res.data;
+  },
+
+  getChildPronunciationHistory: async (childId: number): Promise<ChildPronunciationSession[]> => {
+    const res = await API.get<{ childId: number; sessions: ChildPronunciationSession[] }>(`/parent/child/${childId}/pronunciation-history`);
+    return res.data.sessions || [];
   },
 
   // Cập nhật mục tiêu học tập hàng ngày

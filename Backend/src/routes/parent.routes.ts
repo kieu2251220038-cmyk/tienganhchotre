@@ -7,6 +7,7 @@ import {
     getChildActivityLog,
     getChildVocabularyProgress,
     getChildPronunciationProgress,
+    getChildPronunciationHistory,
     updateStudyGoals,
     getChildSkillAssessment
 } from '../controllers/parent.controller';
@@ -31,6 +32,7 @@ router.get('/child/:childId/overview', getChildOverview);
 router.get('/child/:childId/activity-log', getChildActivityLog);
 router.get('/child/:childId/vocabulary-progress', getChildVocabularyProgress);
 router.get('/child/:childId/pronunciation-progress', getChildPronunciationProgress);
+router.get('/child/:childId/pronunciation-history', getChildPronunciationHistory);
 router.put('/child/:childId/goals', updateStudyGoals);
 router.get('/child/:childId/skills', getChildSkillAssessment);
 
