@@ -124,6 +124,24 @@ import schoolIllustration from '../assets/vocabulary/school.png';
 import parkIllustration from '../assets/vocabulary/park.png';
 import zooIllustration from '../assets/vocabulary/zoo.png';
 import storyIllustration from '../assets/vocabulary/story.png';
+import doctorIllustration from '../assets/vocabulary/doctor.png';
+import pilotIllustration from '../assets/vocabulary/pilot.png';
+import farmerIllustration from '../assets/vocabulary/farmer.png';
+import treeIllustration from '../assets/vocabulary/tree.png';
+import riverIllustration from '../assets/vocabulary/river.png';
+import mountainIllustration from '../assets/vocabulary/mountain.png';
+import forestIllustration from '../assets/vocabulary/forest.png';
+import swimmingIllustration from '../assets/vocabulary/swimming.png';
+import drawingIllustration from '../assets/vocabulary/drawing.png';
+import singingIllustration from '../assets/vocabulary/singing.png';
+import whereIllustration from '../assets/vocabulary/where.png';
+import howIllustration from '../assets/vocabulary/how.png';
+import thisThatIllustration from '../assets/vocabulary/this-that.png';
+import sorryIllustration from '../assets/vocabulary/sorry.png';
+import excuseMeIllustration from '../assets/vocabulary/excuse-me.png';
+import helpIllustration from '../assets/vocabulary/help.png';
+import homeIllustration from '../assets/vocabulary/home.png';
+import youAreWelcomeIllustration from '../assets/vocabulary/you-are-welcome.png';
 
 const GENERATED_VISUALS: Record<string, string> = {
   please: pleaseIllustration,
@@ -253,6 +271,38 @@ const GENERATED_VISUALS: Record<string, string> = {
   park: parkIllustration,
   zoo: zooIllustration,
   story: storyIllustration,
+  doctor: doctorIllustration,
+  pilot: pilotIllustration,
+  farmer: farmerIllustration,
+  tree: treeIllustration,
+  river: riverIllustration,
+  mountain: mountainIllustration,
+  forest: forestIllustration,
+  reading: readIllustration,
+  swimming: swimmingIllustration,
+  drawing: drawingIllustration,
+  singing: singingIllustration,
+  what: whatIsThisIllustration,
+  where: whereIllustration,
+  how: howIllustration,
+  color: whatColorIsItIllustration,
+  this: thisThatIllustration,
+  that: thisThatIllustration,
+  sorry: sorryIllustration,
+  'excuse me': excuseMeIllustration,
+  help: helpIllustration,
+  home: homeIllustration,
+  'you are welcome': youAreWelcomeIllustration,
+  'the cat is small.': smallIllustration,
+  'the dog is big.': bigIllustration,
+  'it is red.': colorRedIllustration,
+  'this is my book.': bookIllustration,
+  'i go to school every day.': goToSchoolIllustration,
+  sentence: writeIllustration,
+  'can you help me?': helpIllustration,
+  'where is the school?': whereIllustration,
+  'thank you.': thankYouIllustration,
+  'you are welcome.': youAreWelcomeIllustration,
 };
 
 const COLOR_GENERATED_VISUALS: Record<string, string> = {
