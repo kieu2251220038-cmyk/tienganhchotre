@@ -168,7 +168,7 @@ const curriculum = [
       },
       {
         name: 'Days of the Week - Ngày trong tuần', description: 'Nhận biết và đọc Monday đến Sunday.',
-        words: [['Monday', 'Thứ Hai', '/ˈmʌndeɪ/'], ['Tuesday', 'Thứ Ba', '/ˈtuːzdeɪ/'], ['Saturday', 'Thứ Bảy', '/ˈsætərdeɪ/'], ['Sunday', 'Chủ nhật', '/ˈsʌndeɪ/']],
+        words: [['Monday', 'Thứ Hai', '/ˈmʌndeɪ/'], ['Tuesday', 'Thứ Ba', '/ˈtuːzdeɪ/'], ['Thursday', 'Thứ Năm', '/ˈθɜːrzdeɪ/'], ['Friday', 'Thứ Sáu', '/ˈfraɪdeɪ/'], ['Saturday', 'Thứ Bảy', '/ˈsætərdeɪ/'], ['Sunday', 'Chủ nhật', '/ˈsʌndeɪ/']],
         game: ['Lật thẻ ngày trong tuần', 'MEMORY_CARDS', 3]
       },
       {
