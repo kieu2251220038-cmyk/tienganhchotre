@@ -1350,10 +1350,7 @@ export default function MiniGame() {
                             fontWeight: 800,
                             color: '#1E293B'
                           }}>
-                            <span style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                              <span>{card.text}</span>
-                              <span style={{ fontSize: '16px', color: '#2563EB' }}>{card.meaning}</span>
-                            </span>
+                            {card.meaning}
                           </div>
                         ) : (
                           <img
