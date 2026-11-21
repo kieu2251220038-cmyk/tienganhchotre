@@ -123,6 +123,7 @@ import zooIllustration from '../assets/vocabulary/zoo.png';
 import storyIllustration from '../assets/vocabulary/story.png';
 import thursdayIllustration from '../assets/vocabulary/thursday.png';
 import fridayIllustration from '../assets/vocabulary/friday.png';
+import wednesdayIllustration from '../assets/vocabulary/wednesday.png';
 
 const GENERATED_VISUALS: Record<string, string> = {
   please: pleaseIllustration,
@@ -243,6 +244,7 @@ const GENERATED_VISUALS: Record<string, string> = {
   egg: eggIllustration,
   monday: mondayIllustration,
   tuesday: tuesdayIllustration,
+  wednesday: wednesdayIllustration,
   thursday: thursdayIllustration,
   friday: fridayIllustration,
   saturday: saturdayIllustration,
