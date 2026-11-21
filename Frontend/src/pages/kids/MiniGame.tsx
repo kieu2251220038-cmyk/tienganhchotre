@@ -1083,9 +1083,6 @@ export default function MiniGame() {
                     >
                       <span style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
                         <span>{item.word}</span>
-                        <span style={{ fontSize: '15px', color: item.matched ? '#94A3B8' : '#2563EB', fontWeight: 700 }}>
-                          {item.meaning}
-                        </span>
                       </span>
                       <span>🔊</span>
                     </div>
