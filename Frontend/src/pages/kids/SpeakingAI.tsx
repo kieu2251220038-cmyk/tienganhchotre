@@ -23,22 +23,6 @@ interface WordItem {
   emoji: string;
 }
 
-const AGE5_SENTENCES: Record<string, string> = {
-  Father: 'This is my father.',
-  Mother: 'This is my mother.',
-  Sister: 'This is my sister.',
-  Brother: 'This is my brother.',
-  Head: 'This is my head.',
-  Eyes: 'I have two eyes.',
-  Nose: 'This is my nose.',
-  Mouth: 'This is my mouth.',
-  Hands: 'These are my hands.',
-  Happy: 'I am happy.',
-  Sad: 'I am sad.',
-  Angry: 'I am angry.',
-  Tired: 'I am tired.'
-};
-
 const AGE5_EMOJIS: Record<string, string> = {
   Father: '👨', Mother: '👩', Sister: '👧', Brother: '👦',
   Head: '🙂', Eyes: '👀', Nose: '👃', Mouth: '👄', Hands: '🙌',
@@ -204,7 +188,7 @@ export default function SpeakingAI() {
           return {
             id: vocabulary.id,
             word: isAge5
-              ? AGE5_SENTENCES[label] || `I like ${rawWord.toLowerCase()}.`
+              ? label
               : isAge6
               ? AGE6_SENTENCES[label] || `This is my ${rawWord.toLowerCase()}.`
               : isAge7
@@ -260,7 +244,9 @@ export default function SpeakingAI() {
     ? `chữ ${currentItem.word}`
     : isAge4
     ? `từ "${currentItem.word}"`
-    : isAge5 || isAge6 || isAge7 || isAge8
+    : isAge5
+    ? `từ "${currentItem.word}"`
+    : isAge6 || isAge7 || isAge8
     ? `câu "${currentItem.word}"`
     : `từ ${currentItem.word}`;
 
@@ -735,7 +721,7 @@ export default function SpeakingAI() {
               : isAge4
               ? '🔢 Luyện nói số và hình dạng'
               : isAge5
-              ? '💬 Luyện nói câu ngắn'
+              ? '💬 Luyện nói từ vựng'
               : isAge6
               ? '👋 Luyện giao tiếp và hỏi đáp'
               : isAge7
@@ -810,7 +796,7 @@ export default function SpeakingAI() {
             : isAge4
             ? `🎙️ Bé hãy đọc số hoặc tên hình bằng tiếng Anh: “${currentItem.word}”`
             : isAge5
-            ? `💬 Bé hãy nói câu: “${currentItem.word}”`
+            ? `💬 Bé hãy nói từ: “${currentItem.word}”`
             : isAge6
             ? `🗣️ Bé hãy nói câu hoặc câu hỏi: “${currentItem.word}”`
             : isAge7
