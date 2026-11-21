@@ -84,6 +84,21 @@ import hatIllustration from '../assets/vocabulary/hat.png';
 import dressIllustration from '../assets/vocabulary/dress.png';
 import iLikeCatsIllustration from '../assets/vocabulary/i-like-cats.png';
 import iLikeBooksIllustration from '../assets/vocabulary/i-like-books.png';
+import maryIllustration from '../assets/vocabulary/mary.png';
+import niceToMeetYouIllustration from '../assets/vocabulary/nice-to-meet-you.png';
+import nameIllustration from '../assets/vocabulary/name.png';
+import bookIllustration from '../assets/vocabulary/book.png';
+import penIllustration from '../assets/vocabulary/pen.png';
+import rulerIllustration from '../assets/vocabulary/ruler.png';
+import pencilIllustration from '../assets/vocabulary/pencil.png';
+import runIllustration from '../assets/vocabulary/run.png';
+import jumpIllustration from '../assets/vocabulary/jump.png';
+import readIllustration from '../assets/vocabulary/read.png';
+import writeIllustration from '../assets/vocabulary/write.png';
+import whatIsThisIllustration from '../assets/vocabulary/what-is-this.png';
+import whatColorIsItIllustration from '../assets/vocabulary/what-color-is-it.png';
+import yesIllustration from '../assets/vocabulary/yes.png';
+import noIllustration from '../assets/vocabulary/no.png';
 
 const GENERATED_VISUALS: Record<string, string> = {
   please: pleaseIllustration,
@@ -167,6 +182,27 @@ const GENERATED_VISUALS: Record<string, string> = {
   'this is my mom.': motherIllustration,
   'i am happy.': happyIllustration,
   'i like books.': iLikeBooksIllustration,
+  mary: maryIllustration,
+  'my name is': nameIllustration,
+  'my name is anna.': nameIllustration,
+  'i am six.': numberSixIllustration,
+  name: nameIllustration,
+  age: numberSixIllustration,
+  'nice to meet you': niceToMeetYouIllustration,
+  book: bookIllustration,
+  pen: penIllustration,
+  ruler: rulerIllustration,
+  pencil: pencilIllustration,
+  run: runIllustration,
+  jump: jumpIllustration,
+  read: readIllustration,
+  write: writeIllustration,
+  'what is this?': whatIsThisIllustration,
+  'what color is it?': whatColorIsItIllustration,
+  yes: yesIllustration,
+  no: noIllustration,
+  'yes, it is.': yesIllustration,
+  'no, it is not.': noIllustration,
 };
 
 const COLOR_GENERATED_VISUALS: Record<string, string> = {
