@@ -113,7 +113,13 @@ import riceIllustration from '../assets/vocabulary/rice.png';
 import noodlesIllustration from '../assets/vocabulary/noodles.png';
 import milkIllustration from '../assets/vocabulary/milk.png';
 import eggIllustration from '../assets/vocabulary/egg.png';
-import weekCalendarIllustration from '../assets/vocabulary/week-calendar.png';
+import weekCalendarMondayIllustration from '../assets/vocabulary/week-calendar-monday.png';
+import weekCalendarTuesdayIllustration from '../assets/vocabulary/week-calendar-tuesday.png';
+import weekCalendarWednesdayIllustration from '../assets/vocabulary/week-calendar-wednesday.png';
+import weekCalendarThursdayIllustration from '../assets/vocabulary/week-calendar-thursday.png';
+import weekCalendarFridayIllustration from '../assets/vocabulary/week-calendar-friday.png';
+import weekCalendarSaturdayIllustration from '../assets/vocabulary/week-calendar-saturday.png';
+import weekCalendarSundayIllustration from '../assets/vocabulary/week-calendar-sunday.png';
 import schoolIllustration from '../assets/vocabulary/school.png';
 import parkIllustration from '../assets/vocabulary/park.png';
 import zooIllustration from '../assets/vocabulary/zoo.png';
@@ -236,13 +242,13 @@ const GENERATED_VISUALS: Record<string, string> = {
   noodles: noodlesIllustration,
   milk: milkIllustration,
   egg: eggIllustration,
-  monday: weekCalendarIllustration,
-  tuesday: weekCalendarIllustration,
-  wednesday: weekCalendarIllustration,
-  thursday: weekCalendarIllustration,
-  friday: weekCalendarIllustration,
-  saturday: weekCalendarIllustration,
-  sunday: weekCalendarIllustration,
+  monday: weekCalendarMondayIllustration,
+  tuesday: weekCalendarTuesdayIllustration,
+  wednesday: weekCalendarWednesdayIllustration,
+  thursday: weekCalendarThursdayIllustration,
+  friday: weekCalendarFridayIllustration,
+  saturday: weekCalendarSaturdayIllustration,
+  sunday: weekCalendarSundayIllustration,
   school: schoolIllustration,
   park: parkIllustration,
   zoo: zooIllustration,
