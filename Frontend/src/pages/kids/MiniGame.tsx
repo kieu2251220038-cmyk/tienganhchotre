@@ -1467,12 +1467,8 @@ export default function MiniGame() {
                     <img
                       src={opt.image}
                       alt={opt.word}
-                      style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '14px', marginBottom: '10px' }}
+                      style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '14px', display: 'block' }}
                     />
-                    <div style={{ fontFamily: 'Fredoka, sans-serif', fontSize: '20px', fontWeight: 800, color: '#334155' }}>
-                      <div>{opt.word}</div>
-                      <div style={{ fontSize: '16px', color: '#2563EB', marginTop: '4px' }}>{opt.meaning}</div>
-                    </div>
                   </div>
                 ))}
               </div>
