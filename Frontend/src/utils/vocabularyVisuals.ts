@@ -99,6 +99,28 @@ import whatIsThisIllustration from '../assets/vocabulary/what-is-this.png';
 import whatColorIsItIllustration from '../assets/vocabulary/what-color-is-it.png';
 import yesIllustration from '../assets/vocabulary/yes.png';
 import noIllustration from '../assets/vocabulary/no.png';
+import grandmaIllustration from '../assets/vocabulary/grandma.png';
+import grandpaIllustration from '../assets/vocabulary/grandpa.png';
+import sunnyIllustration from '../assets/vocabulary/sunny.png';
+import rainyIllustration from '../assets/vocabulary/rainy.png';
+import cloudyIllustration from '../assets/vocabulary/cloudy.png';
+import windyIllustration from '../assets/vocabulary/windy.png';
+import wakeUpIllustration from '../assets/vocabulary/wake-up.png';
+import brushTeethIllustration from '../assets/vocabulary/brush-teeth.png';
+import haveBreakfastIllustration from '../assets/vocabulary/have-breakfast.png';
+import goToSchoolIllustration from '../assets/vocabulary/go-to-school.png';
+import riceIllustration from '../assets/vocabulary/rice.png';
+import noodlesIllustration from '../assets/vocabulary/noodles.png';
+import milkIllustration from '../assets/vocabulary/milk.png';
+import eggIllustration from '../assets/vocabulary/egg.png';
+import mondayIllustration from '../assets/vocabulary/monday.png';
+import tuesdayIllustration from '../assets/vocabulary/tuesday.png';
+import saturdayIllustration from '../assets/vocabulary/saturday.png';
+import sundayIllustration from '../assets/vocabulary/sunday.png';
+import schoolIllustration from '../assets/vocabulary/school.png';
+import parkIllustration from '../assets/vocabulary/park.png';
+import zooIllustration from '../assets/vocabulary/zoo.png';
+import storyIllustration from '../assets/vocabulary/story.png';
 
 const GENERATED_VISUALS: Record<string, string> = {
   please: pleaseIllustration,
@@ -203,6 +225,28 @@ const GENERATED_VISUALS: Record<string, string> = {
   no: noIllustration,
   'yes, it is.': yesIllustration,
   'no, it is not.': noIllustration,
+  grandma: grandmaIllustration,
+  grandpa: grandpaIllustration,
+  sunny: sunnyIllustration,
+  rainy: rainyIllustration,
+  cloudy: cloudyIllustration,
+  windy: windyIllustration,
+  'wake up': wakeUpIllustration,
+  'brush teeth': brushTeethIllustration,
+  'have breakfast': haveBreakfastIllustration,
+  'go to school': goToSchoolIllustration,
+  rice: riceIllustration,
+  noodles: noodlesIllustration,
+  milk: milkIllustration,
+  egg: eggIllustration,
+  monday: mondayIllustration,
+  tuesday: tuesdayIllustration,
+  saturday: saturdayIllustration,
+  sunday: sundayIllustration,
+  school: schoolIllustration,
+  park: parkIllustration,
+  zoo: zooIllustration,
+  story: storyIllustration,
 };
 
 const COLOR_GENERATED_VISUALS: Record<string, string> = {
