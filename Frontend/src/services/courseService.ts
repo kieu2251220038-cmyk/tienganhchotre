@@ -148,6 +148,12 @@ export const courseService = {
     }
   },
 
+  async getFlashcardsByTopic(topicId: number): Promise<Vocabulary[]> {
+    const res = await API.get<Vocabulary[]>(`/content/topics/${topicId}/flashcards`);
+    if (!Array.isArray(res.data)) throw new Error('API flashcards không trả về một mảng dữ liệu.');
+    return res.data;
+  },
+
   async getLessonDetail(lessonId: number): Promise<{ lesson: Lesson; vocabularies: Vocabulary[]; questions: Question[] }> {
     try {
       const res = await API.get<{ lesson: Lesson; vocabularies: Vocabulary[]; questions: Question[] }>(`/content/lessons/${lessonId}`);

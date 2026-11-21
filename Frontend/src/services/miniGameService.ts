@@ -1,4 +1,5 @@
 import API from './api';
+import type { Vocabulary } from '../types';
 
 export type MiniGameType = 'MATCHING_PAIRS' | 'MEMORY_CARDS' | 'LISTEN_AND_PICK' | 'COUNT_OBJECTS' | 'ORDER_SENTENCE';
 
@@ -16,6 +17,11 @@ export interface MiniGame {
   course_id: number;
   course_title: string;
   age_group: string;
+}
+
+export interface BilingualMiniGameContent {
+  game: MiniGame;
+  vocabularies: Vocabulary[];
 }
 
 export interface MiniGamePayload {
@@ -60,6 +66,11 @@ export const miniGameService = {
         gameId: filters.gameId
       }
     });
+    return response.data;
+  },
+
+  async getBilingualContent(gameId: number): Promise<BilingualMiniGameContent> {
+    const response = await API.get(`/games/${gameId}/bilingual-content`);
     return response.data;
   }
 };

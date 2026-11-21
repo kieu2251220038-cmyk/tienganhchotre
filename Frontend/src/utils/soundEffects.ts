@@ -229,3 +229,58 @@ export const speakEnglish = (text: string, rate: number = 0.85): Promise<void> =
     }
   });
 };
+
+// Native Web Speech Synthesis cho tieng Viet. Dung voice vi-VN neu trinh duyet co san.
+export const speakVietnamese = (text: string, rate: number = 0.9): Promise<void> => {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      resolve();
+      return;
+    }
+
+    try {
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+      window.speechSynthesis.cancel();
+
+      const utterance = new SpeechSynthesisUtterance(text.trim());
+      utterance.lang = 'vi-VN';
+      utterance.rate = rate;
+      utterance.pitch = 1.05;
+
+      try {
+        const voices = window.speechSynthesis.getVoices();
+        const preferredVoice = voices.find((voice) => voice.lang.toLowerCase().startsWith('vi'));
+        if (preferredVoice) utterance.voice = preferredVoice;
+      } catch {}
+
+      activeUtterance = utterance;
+      utterance.onend = () => {
+        activeUtterance = null;
+        resolve();
+      };
+      utterance.onerror = () => {
+        activeUtterance = null;
+        resolve();
+      };
+
+      window.setTimeout(() => {
+        try {
+          if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+          if (activeUtterance) window.speechSynthesis.speak(activeUtterance);
+        } catch {
+          resolve();
+        }
+      }, 40);
+    } catch {
+      resolve();
+    }
+  });
+};
+
+// Doc tuan tu tieng Anh truoc, tieng Viet sau cho noi dung trong game.
+export const speakBilingual = async (english: string, vietnamese: string, rate: number = 0.85): Promise<void> => {
+  await speakEnglish(english, rate);
+  if (vietnamese.trim()) await speakVietnamese(vietnamese, rate);
+};

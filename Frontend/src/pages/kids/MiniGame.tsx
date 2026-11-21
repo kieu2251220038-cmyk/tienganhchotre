@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { sounds, speakEnglish } from '../../utils/soundEffects';
+import { sounds, speakBilingual } from '../../utils/soundEffects';
 import { authService } from '../../services/authService';
 import { userDataService } from '../../services/userDataService';
 import { progressService, type LessonRewardResult } from '../../services/progressService';
@@ -270,7 +270,7 @@ const withChildFriendlyImages = (topics: GameTopic[]): GameTopic[] => topics.map
   ...topic,
   words: topic.words.map((word) => ({
     ...word,
-    image: getVocabularyDisplayImage(word.word, word.image)
+    image: getVocabularyDisplayImage(word.word, word.image, word.meaning)
   }))
 }));
 
@@ -295,11 +295,51 @@ const SENTENCE_BANK: Record<string, string[]> = {
   nature: ['The tree is tall and green.', 'The river flows through the forest.', 'The mountain is high.', 'Many animals live in the forest.']
 };
 
+const SENTENCE_TRANSLATIONS: Record<string, string> = {
+  'Hello, my name is Anna.': 'Xin chào, tên của mình là Anna.',
+  'Good morning, teacher.': 'Chào buổi sáng, cô giáo.',
+  'Nice to meet you.': 'Rất vui được gặp bạn.',
+  'Goodbye, see you soon.': 'Tạm biệt, hẹn gặp lại bạn sớm.',
+  'My name is Anna.': 'Tên của mình là Anna.',
+  'I am six years old.': 'Mình sáu tuổi.',
+  'I like English.': 'Mình thích tiếng Anh.',
+  'This is my friend.': 'Đây là bạn của mình.',
+  'This is my pencil.': 'Đây là bút chì của mình.',
+  'I have a blue notebook.': 'Mình có một quyển vở màu xanh dương.',
+  'Where is my ruler?': 'Thước kẻ của mình ở đâu?',
+  'This is my school bag.': 'Đây là cặp sách của mình.',
+  'What is this?': 'Đây là cái gì?',
+  'What color is it?': 'Nó có màu gì?',
+  'Is this your book?': 'Đây có phải là quyển sách của bạn không?',
+  'Yes, it is.': 'Đúng vậy.',
+  'I wake up at seven.': 'Mình thức dậy lúc bảy giờ.',
+  'I brush my teeth every morning.': 'Mình đánh răng mỗi buổi sáng.',
+  'I eat breakfast in the morning.': 'Mình ăn sáng vào buổi sáng.',
+  'I go to school every day.': 'Mình đi học mỗi ngày.',
+  'It is sunny today.': 'Hôm nay trời có nắng.',
+  'It is rainy today.': 'Hôm nay trời có mưa.',
+  'It is cloudy today.': 'Hôm nay trời nhiều mây.',
+  'It is windy today.': 'Hôm nay trời có gió.',
+  'I would like some milk.': 'Mình muốn uống một ít sữa.',
+  'I eat bread for breakfast.': 'Mình ăn bánh mì vào bữa sáng.',
+  'I like rice.': 'Mình thích cơm.',
+  'I would like an egg.': 'Mình muốn một quả trứng.',
+  'A teacher helps children learn.': 'Giáo viên giúp các bạn nhỏ học tập.',
+  'A doctor helps sick people.': 'Bác sĩ giúp những người bị ốm.',
+  'A farmer grows food.': 'Nông dân trồng lương thực.',
+  'A pilot flies an airplane.': 'Phi công lái máy bay.',
+  'The tree is tall and green.': 'Cây cao và xanh.',
+  'The river flows through the forest.': 'Dòng sông chảy qua khu rừng.',
+  'The mountain is high.': 'Ngọn núi rất cao.',
+  'Many animals live in the forest.': 'Nhiều con vật sống trong khu rừng.'
+};
+
 type GameMode = 'MATCH' | 'MEMORY' | 'LISTEN' | 'COUNT' | 'ORDER';
 
 interface MatchItem {
   id: number;
   word: string;
+  meaning: string;
   image: string;
   matched: boolean;
 }
@@ -309,6 +349,7 @@ interface MemoryCard {
   pairId: number;
   type: 'WORD' | 'IMAGE';
   text?: string;
+  meaning?: string;
   image?: string;
   isFlipped: boolean;
   isMatched: boolean;
@@ -327,6 +368,7 @@ interface SentenceToken {
 
 interface SentenceQuestion {
   sentence: string;
+  translation: string;
   tokens: SentenceToken[];
   shuffledTokens: SentenceToken[];
 }
@@ -450,12 +492,13 @@ export default function MiniGame() {
           : requestedConfigs;
         const configuredTopics = await Promise.all(configs.map(async (game) => {
           const fallback = getFallbackTopic(game.topic_name);
-          const vocabularies = await courseService.getVocabulariesByTopic(game.topic_id);
+          const bilingualContent = await miniGameService.getBilingualContent(game.id);
+          const vocabularies = bilingualContent.vocabularies;
           const words = vocabularies.map((vocabulary) => ({
             id: vocabulary.id,
             word: vocabulary.word,
             meaning: vocabulary.meaning_vi,
-            image: getVocabularyDisplayImage(vocabulary.word, vocabulary.image_url)
+            image: getVocabularyDisplayImage(vocabulary.word, vocabulary.image_url, vocabulary.meaning_vi)
           }));
           return {
             id: String(game.id),
@@ -505,6 +548,7 @@ export default function MiniGame() {
       const fresh: MatchItem[] = wordsSlice.map((w) => ({
         id: w.id,
         word: w.word,
+        meaning: w.meaning,
         image: w.image,
         matched: false
       }));
@@ -525,6 +569,7 @@ export default function MiniGame() {
           pairId: w.id,
           type: 'WORD',
           text: w.word,
+          meaning: w.meaning,
           isFlipped: false,
           isMatched: false
         });
@@ -568,7 +613,9 @@ export default function MiniGame() {
       count,
       options: Array.from(options).sort(() => Math.random() - 0.5)
     });
-    setTimeout(() => speakEnglish(`How many ${object.word.toLowerCase()}?`), 350);
+    setTimeout(() => {
+      void speakBilingual(`How many ${object.word.toLowerCase()}?`, `Có bao nhiêu ${object.meaning.toLowerCase()}?`);
+    }, 350);
   };
 
   const nextSentenceQuestion = (topic: GameTopic) => {
@@ -576,15 +623,19 @@ export default function MiniGame() {
     const bankKey = Object.keys(SENTENCE_BANK).find((key) => normalizedTopic.includes(key)) || 'greetings';
     const sentenceBank = SENTENCE_BANK[bankKey] || SENTENCE_BANK.greetings;
     const sentence = sentenceBank[Math.floor(Math.random() * sentenceBank.length)] || sentenceBank[0];
+    const translation = SENTENCE_TRANSLATIONS[sentence] || 'Bé hãy sắp xếp câu đúng.';
     const tokens = sentence.split(' ').map((text, index) => ({ id: `${index}-${text}`, text }));
 
     setSentenceQuestion({
       sentence,
+      translation,
       tokens,
       shuffledTokens: [...tokens].sort(() => Math.random() - 0.5)
     });
     setSelectedSentenceTokens([]);
-    setTimeout(() => speakEnglish(sentence), 350);
+    setTimeout(() => {
+      void speakBilingual(sentence, translation);
+    }, 350);
   };
 
   const nextListenQuestion = (topic: GameTopic) => {
@@ -597,7 +648,7 @@ export default function MiniGame() {
 
     // Tự động phát âm từ cần tìm
     setTimeout(() => {
-      speakEnglish(chosen.word);
+      void speakBilingual(chosen.word, chosen.meaning);
     }, 400);
   };
 
@@ -606,7 +657,7 @@ export default function MiniGame() {
     sounds.playClick();
     setSelectedWordId(id);
     const item = matchWords.find((i) => i.id === id);
-    if (item) speakEnglish(item.word);
+    if (item) void speakBilingual(item.word, item.meaning);
     checkMatch(id, selectedImageId);
   };
 
@@ -654,7 +705,7 @@ export default function MiniGame() {
     if (card.isFlipped || card.isMatched || flippedCardIds.length >= 2) return;
 
     sounds.playClick();
-    if (card.type === 'WORD' && card.text) speakEnglish(card.text);
+    if (card.type === 'WORD' && card.text) void speakBilingual(card.text, card.meaning || '');
 
     const newCards = memoryCards.map((c) => (c.uid === card.uid ? { ...c, isFlipped: true } : c));
     setMemoryCards(newCards);
@@ -725,7 +776,7 @@ export default function MiniGame() {
 
   const handleReplayVoice = () => {
     sounds.playClick();
-    if (targetWord) speakEnglish(targetWord.word);
+    if (targetWord) void speakBilingual(targetWord.word, targetWord.meaning);
   };
 
   const handleAnswerCount = (answer: number) => {
@@ -1030,7 +1081,12 @@ export default function MiniGame() {
                         gap: '8px'
                       }}
                     >
-                      <span>{item.word}</span>
+                      <span style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                        <span>{item.word}</span>
+                        <span style={{ fontSize: '15px', color: item.matched ? '#94A3B8' : '#2563EB', fontWeight: 700 }}>
+                          {item.meaning}
+                        </span>
+                      </span>
                       <span>🔊</span>
                     </div>
                   ))}
@@ -1090,7 +1146,12 @@ export default function MiniGame() {
                 color: '#075985'
               }}>
                 🔢 Bé hãy đếm các hình bên dưới rồi chọn số đúng nhé!<br />
-                <span style={{ fontSize: '17px' }}>How many {countQuestion.object.word.toLowerCase()}?</span>
+                <span style={{ display: 'block', fontSize: '17px' }}>
+                  How many {countQuestion.object.word.toLowerCase()}?
+                </span>
+                <span style={{ display: 'block', marginTop: '3px', fontSize: '16px' }}>
+                  Có bao nhiêu {countQuestion.object.meaning.toLowerCase()}?
+                </span>
                 <span style={{ display: 'block', marginTop: '4px', fontSize: '15px' }}>
                   Đã đúng: {countSuccessCount}/5 câu
                 </span>
@@ -1160,6 +1221,7 @@ export default function MiniGame() {
                 color: '#5B21B6'
               }}>
                 🧩 Hãy chạm vào các từ để xếp thành câu đúng nhé!<br />
+                <span style={{ fontSize: '15px' }}>Nghe tiếng Anh rồi nghe nghĩa tiếng Việt bên dưới.</span><br />
                 <span style={{ fontSize: '15px' }}>Đã đúng: {sentenceSuccessCount}/5 câu</span>
               </div>
 
@@ -1250,7 +1312,8 @@ export default function MiniGame() {
                 fontWeight: 600,
                 color: '#1E40AF'
               }}>
-                👉 Chạm vào 2 lá bài bất kỳ để lật. Tìm đúng <strong>1 thẻ chữ</strong> và <strong>1 thẻ hình</strong> khớp nhau nhé!
+                👉 Chạm vào 2 lá bài bất kỳ để lật. Tìm đúng <strong>1 thẻ chữ</strong> và <strong>1 thẻ hình</strong> khớp nhau nhé!<br />
+                <span style={{ fontSize: '14px' }}>Bé sẽ nghe từ tiếng Anh rồi nghe nghĩa tiếng Việt.</span>
               </div>
 
               <div style={{
@@ -1290,7 +1353,10 @@ export default function MiniGame() {
                             fontWeight: 800,
                             color: '#1E293B'
                           }}>
-                            {card.text}
+                            <span style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                              <span>{card.text}</span>
+                              <span style={{ fontSize: '16px', color: '#2563EB' }}>{card.meaning}</span>
+                            </span>
                           </div>
                         ) : (
                           <img
@@ -1325,6 +1391,8 @@ export default function MiniGame() {
                 fontWeight: 600,
                 color: '#92400E'
               }}>
+                <div style={{ fontSize: '14px', marginBottom: '4px' }}>English first / Tiếng Anh trước</div>
+                <div style={{ fontSize: '14px', marginBottom: '4px' }}>Then Vietnamese meaning / Sau đó là nghĩa tiếng Việt</div>
                 👉 Cú Bo Bo sẽ đọc từ tiếng Anh. Bé hãy lắng nghe và chọn đúng hình ảnh bên dưới nhé! (Đã đúng: {listenSuccessCount}/5)
               </div>
 
@@ -1366,6 +1434,9 @@ export default function MiniGame() {
                   <div style={{ fontFamily: 'Fredoka, sans-serif', fontSize: '26px', fontWeight: 800, color: '#1E293B' }}>
                     "{targetWord.word}"
                   </div>
+                  <div style={{ fontFamily: 'Fredoka, sans-serif', fontSize: '18px', fontWeight: 700, color: '#2563EB' }}>
+                    {targetWord.meaning}
+                  </div>
                 </div>
               </div>
 
@@ -1399,7 +1470,8 @@ export default function MiniGame() {
                       style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '14px', marginBottom: '10px' }}
                     />
                     <div style={{ fontFamily: 'Fredoka, sans-serif', fontSize: '20px', fontWeight: 800, color: '#334155' }}>
-                      {opt.meaning}
+                      <div>{opt.word}</div>
+                      <div style={{ fontSize: '16px', color: '#2563EB', marginTop: '4px' }}>{opt.meaning}</div>
                     </div>
                   </div>
                 ))}

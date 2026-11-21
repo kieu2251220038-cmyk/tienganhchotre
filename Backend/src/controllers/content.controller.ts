@@ -72,7 +72,51 @@ export const getVocabulariesByTopic = async (req: Request, res: Response): Promi
         res.status(500).json({ message: 'Lỗi hệ thống' });
     }
 };
-// 4. Lấy chi tiết bài học kèm câu hỏi, đáp án và từ vựng
+
+// 4. Lấy dữ liệu Flashcard theo chủ đề. Mặt trước và mặt sau dùng chung ảnh
+// để khi bé lật thẻ, chữ/hình của từ đang học vẫn được giữ nguyên.
+export const getFlashcardsByTopic = async (req: Request, res: Response): Promise<void> => {
+    const { topicId } = req.params;
+    try {
+        const [vocabularies]: any = await pool.query(
+            `SELECT v.*, m_img.file_url AS image_url, m_aud.file_url AS audio_url
+             FROM vocabularies v
+             LEFT JOIN media_assets m_img ON m_img.id = v.image_id
+             LEFT JOIN media_assets m_aud ON m_aud.id = v.audio_id
+             WHERE v.topic_id = ?
+             ORDER BY v.id ASC`,
+            [topicId]
+        );
+
+        res.status(200).json(vocabularies.map((v: any) => {
+            const imageUrl = toPublicMediaUrl(req, v.image_url);
+            const audioUrl = toPublicMediaUrl(req, v.audio_url);
+
+            return {
+                ...v,
+                image_url: imageUrl,
+                audio_url: audioUrl,
+                flashcard: {
+                    front: {
+                        word: v.word,
+                        phonetic: v.phonetic,
+                        image_url: imageUrl,
+                        audio_url: audioUrl
+                    },
+                    back: {
+                        word: v.word,
+                        meaning_vi: v.meaning_vi,
+                        image_url: imageUrl
+                    }
+                }
+            };
+        }));
+    } catch (error) {
+        console.error('Lỗi khi lấy dữ liệu Flashcard:', error);
+        res.status(500).json({ message: 'Lỗi hệ thống' });
+    }
+};
+// 5. Lấy chi tiết bài học kèm câu hỏi, đáp án và từ vựng
 export const getLessonById = async (req: Request, res: Response): Promise<void> => {
     const { lessonId } = req.params;
     try {
@@ -109,8 +153,14 @@ export const getLessonById = async (req: Request, res: Response): Promise<void> 
         // Lấy danh sách đáp án cho từng câu hỏi
         for (const q of questions) {
             const [answers]: any = await pool.query(
-                'SELECT a.*, m.file_url as media_url FROM answers a LEFT JOIN media_assets m ON a.media_id = m.id WHERE a.question_id = ?',
-                [q.id]
+                `SELECT a.*, m.file_url as media_url, v.meaning_vi
+                 FROM answers a
+                 LEFT JOIN media_assets m ON a.media_id = m.id
+                 LEFT JOIN vocabularies v
+                   ON LOWER(TRIM(v.word)) = LOWER(TRIM(a.answer_text))
+                  AND v.topic_id = ?
+                 WHERE a.question_id = ?`,
+                [lesson.topic_id, q.id]
             );
             q.answers = answers;
         }

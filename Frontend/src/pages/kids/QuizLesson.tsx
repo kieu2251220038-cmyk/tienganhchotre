@@ -4,7 +4,7 @@ import { courseService } from '../../services/courseService';
 import { progressService, type LessonRewardResult } from '../../services/progressService';
 import { authService } from '../../services/authService';
 import type { Question, Answer } from '../../types';
-import { speakEnglish, sounds } from '../../utils/soundEffects';
+import { speakBilingual, sounds } from '../../utils/soundEffects';
 import { getVocabularyDisplayImage } from '../../utils/vocabularyVisuals';
 import RewardPopup from '../../components/RewardPopup';
 import FireworksCelebration from '../../components/FireworksCelebration';
@@ -65,11 +65,15 @@ export default function QuizLesson() {
 
   const handlePronounceQuestion = () => {
     sounds.playClick();
-    speakEnglish(currentQ.question_text.replace(/[^\w\s]/gi, ''));
+    void speakBilingual(
+      currentQ.question_text.replace(/[^\w\s]/gi, ''),
+      'Bé hãy chọn đáp án đúng nhé.'
+    );
   };
 
   const handleSelectAnswer = (ans: Answer) => {
     if (isAnswered) return;
+    void speakBilingual(ans.answer_text, ans.meaning_vi || '');
     setSelectedAnswer(ans);
     setIsAnswered(true);
     setWrongAnswerWasRetry(false);
@@ -245,6 +249,9 @@ export default function QuizLesson() {
             <h2 style={{ fontSize: '34px', color: '#1E293B', margin: 0, lineHeight: 1.25 }}>
               {currentQ.question_text}
             </h2>
+            <div style={{ width: '100%', color: '#2563EB', fontWeight: 700, fontSize: '16px' }}>
+              Choose the correct answer / Bé hãy chọn đáp án đúng
+            </div>
             <button
               onClick={handlePronounceQuestion}
               className="btn-kid btn-warning"
@@ -310,7 +317,7 @@ export default function QuizLesson() {
                     marginBottom: '12px'
                   }}>
                     <img
-                      src={getVocabularyDisplayImage(ans.answer_text, ans.media_url)}
+                      src={getVocabularyDisplayImage(ans.answer_text, ans.media_url, ans.meaning_vi)}
                       alt={ans.answer_text}
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
@@ -321,7 +328,12 @@ export default function QuizLesson() {
                     fontWeight: 700,
                     color: '#1E293B'
                   }}>
-                    {ans.answer_text}
+                    <div>{ans.answer_text}</div>
+                    {ans.meaning_vi && (
+                      <div style={{ fontSize: '17px', color: '#2563EB', marginTop: '4px' }}>
+                        {ans.meaning_vi}
+                      </div>
+                    )}
                   </div>
                 </div>
               );

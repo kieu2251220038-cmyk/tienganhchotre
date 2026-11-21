@@ -204,6 +204,7 @@ export interface Answer {
   id: number;
   question_id: number;
   answer_text: string;
+  meaning_vi?: string;
   media_id?: number;
   media_url?: string;
   is_correct: boolean | number;

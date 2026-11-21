@@ -157,7 +157,7 @@ export default function VideoLesson() {
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                   <img
-                    src={getVocabularyDisplayImage(v.word, v.image_url)}
+                    src={getVocabularyDisplayImage(v.word, v.image_url, v.meaning_vi)}
                     alt={v.word}
                     style={{ width: '52px', height: '52px', objectFit: 'cover', borderRadius: '14px', flexShrink: 0 }}
                   />

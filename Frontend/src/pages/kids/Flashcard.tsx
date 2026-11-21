@@ -22,10 +22,12 @@ export default function Flashcard() {
   const [reward, setReward] = useState<LessonRewardResult | null>(null);
 
   useEffect(() => {
-    courseService.getVocabulariesByTopic(Number(topicId)).then((data) => {
+    courseService.getFlashcardsByTopic(Number(topicId)).then((data) => {
       if (data.length > 0) {
         setVocabList(data);
       }
+      setIsFlipped(false);
+      setCurrentIndex(0);
     });
   }, [topicId]);
 
@@ -34,12 +36,12 @@ export default function Flashcard() {
     meaning_vi: 'Quả táo',
     phonetic: '/ˈæpəl/'
   };
-  const fallbackImage = getVocabularyFallbackImage(currentWord.word);
-  const [imageSrc, setImageSrc] = useState(getVocabularyDisplayImage(currentWord.word, currentWord.image_url));
+  const fallbackImage = getVocabularyFallbackImage(currentWord.word, currentWord.meaning_vi);
+  const [imageSrc, setImageSrc] = useState(getVocabularyDisplayImage(currentWord.word, currentWord.image_url, currentWord.meaning_vi));
 
   useEffect(() => {
-    setImageSrc(getVocabularyDisplayImage(currentWord.word, currentWord.image_url));
-  }, [currentWord.word, currentWord.image_url]);
+    setImageSrc(getVocabularyDisplayImage(currentWord.word, currentWord.image_url, currentWord.meaning_vi));
+  }, [currentWord.word, currentWord.image_url, currentWord.meaning_vi]);
 
   const handlePronounce = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -257,9 +259,28 @@ export default function Flashcard() {
                 </div>
               </>
             ) : (
-              /* Back of card */
-              <div style={{ textAlign: 'center', padding: '30px 20px' }}>
-                <div style={{ fontSize: '72px', marginBottom: '16px' }}>🌟</div>
+              /* Back of card: giữ nguyên hình/từ của mặt trước và bổ sung nghĩa */
+              <div style={{ textAlign: 'center', padding: '22px 20px' }}>
+                <div style={{
+                  width: 'min(190px, 52vw)',
+                  height: 'min(150px, 42vw)',
+                  margin: '0 auto 16px',
+                  borderRadius: '18px',
+                  overflow: 'hidden',
+                  border: '3px solid #F1F5F9',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
+                  backgroundColor: '#FFFFFF'
+                }}>
+                  <img
+                    src={imageSrc}
+                    alt={currentWord.word}
+                    onError={() => setImageSrc(fallbackImage)}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                  />
+                </div>
+                <div style={{ fontSize: '38px', fontWeight: 800, color: '#1E293B', marginBottom: '10px' }}>
+                  {currentWord.word}
+                </div>
                 <h2 style={{ fontSize: '54px', color: '#2563EB', marginBottom: '10px', lineHeight: 1.15 }}>
                   {currentWord.meaning_vi}
                 </h2>

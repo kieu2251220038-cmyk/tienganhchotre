@@ -14,6 +14,63 @@ import sadIllustration from '../assets/vocabulary/sad.png';
 import angryIllustration from '../assets/vocabulary/angry.png';
 import tiredIllustration from '../assets/vocabulary/tired.png';
 import teacherIllustration from '../assets/vocabulary/teacher.png';
+import numberOneIllustration from '../assets/vocabulary/number-one.png';
+import numberTwoIllustration from '../assets/vocabulary/number-two.png';
+import numberThreeIllustration from '../assets/vocabulary/number-three.png';
+import numberFourIllustration from '../assets/vocabulary/number-four.png';
+import numberFiveIllustration from '../assets/vocabulary/number-five.png';
+import numberSixIllustration from '../assets/vocabulary/number-six.png';
+import numberSevenIllustration from '../assets/vocabulary/number-seven.png';
+import numberEightIllustration from '../assets/vocabulary/number-eight.png';
+import numberNineIllustration from '../assets/vocabulary/number-nine.png';
+import numberTenIllustration from '../assets/vocabulary/number-ten.png';
+import letterAIllustration from '../assets/vocabulary/letter-a.png';
+import letterBIllustration from '../assets/vocabulary/letter-b.png';
+import letterCIllustration from '../assets/vocabulary/letter-c.png';
+import letterDIllustration from '../assets/vocabulary/letter-d.png';
+import letterEIllustration from '../assets/vocabulary/letter-e.png';
+import letterFIllustration from '../assets/vocabulary/letter-f.png';
+import letterGIllustration from '../assets/vocabulary/letter-g.png';
+import letterHIllustration from '../assets/vocabulary/letter-h.png';
+import letterIIllustration from '../assets/vocabulary/letter-i.png';
+import letterJIllustration from '../assets/vocabulary/letter-j.png';
+import letterKIllustration from '../assets/vocabulary/letter-k.png';
+import letterLIllustration from '../assets/vocabulary/letter-l.png';
+import letterMIllustration from '../assets/vocabulary/letter-m.png';
+import letterNIllustration from '../assets/vocabulary/letter-n.png';
+import letterOIllustration from '../assets/vocabulary/letter-o.png';
+import letterPIllustration from '../assets/vocabulary/letter-p.png';
+import letterQIllustration from '../assets/vocabulary/letter-q.png';
+import letterRIllustration from '../assets/vocabulary/letter-r.png';
+import letterSIllustration from '../assets/vocabulary/letter-s.png';
+import letterTIllustration from '../assets/vocabulary/letter-t.png';
+import letterUIllustration from '../assets/vocabulary/letter-u.png';
+import letterVIllustration from '../assets/vocabulary/letter-v.png';
+import letterWIllustration from '../assets/vocabulary/letter-w.png';
+import letterXIllustration from '../assets/vocabulary/letter-x.png';
+import letterYIllustration from '../assets/vocabulary/letter-y.png';
+import letterZIllustration from '../assets/vocabulary/letter-z.png';
+import circleIllustration from '../assets/vocabulary/circle.png';
+import squareIllustration from '../assets/vocabulary/square.png';
+import starIllustration from '../assets/vocabulary/star.png';
+import triangleIllustration from '../assets/vocabulary/triangle.png';
+import appleIllustration from '../assets/vocabulary/apple.png';
+import bananaIllustration from '../assets/vocabulary/banana.png';
+import mangoIllustration from '../assets/vocabulary/mango.png';
+import orangeIllustration from '../assets/vocabulary/orange.png';
+import strawberryIllustration from '../assets/vocabulary/strawberry.png';
+import watermelonIllustration from '../assets/vocabulary/watermelon.png';
+import toyBallIllustration from '../assets/vocabulary/toy-ball.png';
+import toyDollIllustration from '../assets/vocabulary/toy-doll.png';
+import toyCarIllustration from '../assets/vocabulary/toy-car.png';
+import toyTeddyBearIllustration from '../assets/vocabulary/toy-teddy-bear.png';
+import colorPurpleIllustration from '../assets/vocabulary/color-purple.png';
+import colorOrangeIllustration from '../assets/vocabulary/color-orange.png';
+import colorGreenIllustration from '../assets/vocabulary/color-green.png';
+import colorYellowIllustration from '../assets/vocabulary/color-yellow.png';
+import colorBlueIllustration from '../assets/vocabulary/color-blue.png';
+import colorRedIllustration from '../assets/vocabulary/color-red.png';
+import colorPinkIllustration from '../assets/vocabulary/color-pink.png';
 
 const GENERATED_VISUALS: Record<string, string> = {
   please: pleaseIllustration,
@@ -32,6 +89,66 @@ const GENERATED_VISUALS: Record<string, string> = {
   angry: angryIllustration,
   tired: tiredIllustration,
   teacher: teacherIllustration,
+  one: numberOneIllustration,
+  two: numberTwoIllustration,
+  three: numberThreeIllustration,
+  four: numberFourIllustration,
+  five: numberFiveIllustration,
+  six: numberSixIllustration,
+  seven: numberSevenIllustration,
+  eight: numberEightIllustration,
+  nine: numberNineIllustration,
+  ten: numberTenIllustration,
+  a: letterAIllustration,
+  b: letterBIllustration,
+  c: letterCIllustration,
+  d: letterDIllustration,
+  e: letterEIllustration,
+  f: letterFIllustration,
+  g: letterGIllustration,
+  h: letterHIllustration,
+  i: letterIIllustration,
+  j: letterJIllustration,
+  k: letterKIllustration,
+  l: letterLIllustration,
+  m: letterMIllustration,
+  n: letterNIllustration,
+  o: letterOIllustration,
+  p: letterPIllustration,
+  q: letterQIllustration,
+  r: letterRIllustration,
+  s: letterSIllustration,
+  t: letterTIllustration,
+  u: letterUIllustration,
+  v: letterVIllustration,
+  w: letterWIllustration,
+  x: letterXIllustration,
+  y: letterYIllustration,
+  z: letterZIllustration,
+  circle: circleIllustration,
+  square: squareIllustration,
+  star: starIllustration,
+  triangle: triangleIllustration,
+  apple: appleIllustration,
+  banana: bananaIllustration,
+  mango: mangoIllustration,
+  orange: orangeIllustration,
+  strawberry: strawberryIllustration,
+  watermelon: watermelonIllustration,
+  ball: toyBallIllustration,
+  doll: toyDollIllustration,
+  car: toyCarIllustration,
+  'teddy bear': toyTeddyBearIllustration,
+};
+
+const COLOR_GENERATED_VISUALS: Record<string, string> = {
+  purple: colorPurpleIllustration,
+  orange: colorOrangeIllustration,
+  green: colorGreenIllustration,
+  yellow: colorYellowIllustration,
+  blue: colorBlueIllustration,
+  red: colorRedIllustration,
+  pink: colorPinkIllustration,
 };
 
 const VISUALS: Record<string, { emoji?: string; background: string; foreground: string }> = {
@@ -272,13 +389,30 @@ function escapeXml(value: string) {
   }[character] || character));
 }
 
+function normalizeVocabularyKey(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function isColorMeaning(meaningVi?: string) {
+  if (!meaningVi) return false;
+  const normalizedMeaning = meaningVi
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+  return normalizedMeaning.startsWith('mau ');
+}
+
 /**
  * Local, child-friendly fallback artwork. It keeps cards useful before a teacher
  * uploads a real image and prevents an unrelated dog image appearing for every word.
  */
-export function getVocabularyFallbackImage(word: string) {
+export function getVocabularyFallbackImage(word: string, meaningVi?: string) {
   const label = word.trim() || 'Word';
-  const key = label.toLowerCase().replace(/\s+/g, ' ');
+  const key = normalizeVocabularyKey(label);
+  const colorGeneratedVisual = isColorMeaning(meaningVi) ? COLOR_GENERATED_VISUALS[key] : undefined;
+  if (colorGeneratedVisual) return colorGeneratedVisual;
+
   const generatedVisual = GENERATED_VISUALS[key];
   if (generatedVisual) return generatedVisual;
 
@@ -305,11 +439,22 @@ export function getVocabularyFallbackImage(word: string) {
  * Keeps teacher-uploaded media, while replacing the old demo Unsplash images
  * with the local child-friendly artwork for lessons and mini-games.
  */
-export function getVocabularyDisplayImage(word: string, imageUrl?: string) {
+export function getVocabularyDisplayImage(word: string, imageUrl?: string, meaningVi?: string) {
+  const key = normalizeVocabularyKey(word);
   const normalizedImageUrl = imageUrl?.trim();
+
+  // "Orange" appears in both Fruits and Colors. Use the meaning to select
+  // the correct artwork without changing the existing vocabulary data model.
+  const colorGeneratedVisual = isColorMeaning(meaningVi) ? COLOR_GENERATED_VISUALS[key] : undefined;
+  if (colorGeneratedVisual) return colorGeneratedVisual;
+
+  // Keep the generated learning artwork consistent even when the database still
+  // contains an older uploaded image for the same vocabulary word.
+  if (GENERATED_VISUALS[key]) return GENERATED_VISUALS[key];
+
   if (normalizedImageUrl && !normalizedImageUrl.includes('images.unsplash.com')) {
     return normalizedImageUrl;
   }
 
-  return getVocabularyFallbackImage(word);
+  return getVocabularyFallbackImage(word, meaningVi);
 }

@@ -10,6 +10,13 @@ const gameSelect = `
     INNER JOIN courses c ON c.id = t.course_id
 `;
 
+const toPublicMediaUrl = (req: Request, fileUrl: string | null | undefined): string | null => {
+    if (!fileUrl) return null;
+    if (/^(https?:)?\/\//i.test(fileUrl) || fileUrl.startsWith('data:')) return fileUrl;
+    const normalizedPath = fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`;
+    return `${req.protocol}://${req.get('host')}${normalizedPath}`;
+};
+
 const validateGamePayload = (body: Record<string, unknown>): string | null => {
     if (!Number.isInteger(Number(body.topic_id)) || Number(body.topic_id) <= 0) return 'Vui lòng chọn chủ đề cho mini game.';
     if (typeof body.name !== 'string' || !body.name.trim()) return 'Tên mini game không được để trống.';
@@ -90,6 +97,55 @@ export const getActiveMiniGames = async (req: Request, res: Response): Promise<v
     } catch (error) {
         console.error('Lỗi lấy mini game cho học sinh:', error);
         res.status(500).json({ message: 'Không thể tải mini game.' });
+    }
+};
+
+// Noi dung song ngu cho mini-game: frontend chi can mot API de lay cau hinh va tu vung.
+export const getMiniGameBilingualContent = async (req: Request, res: Response): Promise<void> => {
+    const { gameId } = req.params;
+    try {
+        const [games]: any = await pool.query(
+            `${gameSelect}
+             WHERE mg.id = ?
+               AND mg.is_active = 1
+               AND t.status = "PUBLISHED"
+               AND EXISTS (
+                   SELECT 1 FROM lessons l_approval
+                   WHERE l_approval.mini_game_id = mg.id
+                     AND l_approval.status = "PUBLISHED"
+                     AND l_approval.approval_status = "APPROVED"
+               )`,
+            [gameId]
+        );
+
+        if (games.length === 0) {
+            res.status(404).json({ message: 'Khong tim thay mini game dang hoat dong.' });
+            return;
+        }
+
+        const game = games[0];
+        const [vocabularies]: any = await pool.query(
+            `SELECT v.id, v.topic_id, v.word, v.meaning_vi, v.phonetic,
+                    m_img.file_url AS image_url, m_aud.file_url AS audio_url
+             FROM vocabularies v
+             LEFT JOIN media_assets m_img ON m_img.id = v.image_id
+             LEFT JOIN media_assets m_aud ON m_aud.id = v.audio_id
+             WHERE v.topic_id = ?
+             ORDER BY v.id ASC`,
+            [game.topic_id]
+        );
+
+        res.status(200).json({
+            game,
+            vocabularies: vocabularies.map((vocabulary: any) => ({
+                ...vocabulary,
+                image_url: toPublicMediaUrl(req, vocabulary.image_url),
+                audio_url: toPublicMediaUrl(req, vocabulary.audio_url)
+            }))
+        });
+    } catch (error) {
+        console.error('Loi lay noi dung song ngu mini game:', error);
+        res.status(500).json({ message: 'Khong the lay noi dung song ngu mini game.' });
     }
 };
 

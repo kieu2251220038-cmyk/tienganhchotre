@@ -3,6 +3,7 @@ import {
     getTopicsByCourse, 
     getLessonsByTopic, 
     getVocabulariesByTopic,
+    getFlashcardsByTopic,
     getLessonById,
     addVocabulary
 } from '../controllers/content.controller';
@@ -17,6 +18,10 @@ router.get('/topics/:topicId/lessons', getLessonsByTopic);
 
 // API lấy Từ vựng theo Chủ đề: /api/content/topics/:topicId/vocabularies
 router.get('/topics/:topicId/vocabularies', getVocabulariesByTopic);
+
+// API lấy dữ liệu Flashcard, giữ ảnh cho cả mặt trước và mặt sau:
+// /api/content/topics/:topicId/flashcards
+router.get('/topics/:topicId/flashcards', getFlashcardsByTopic);
 
 // API lấy Chi tiết bài học (kèm câu hỏi, đáp án, từ vựng): /api/content/lessons/:lessonId
 router.get('/lessons/:lessonId', getLessonById);

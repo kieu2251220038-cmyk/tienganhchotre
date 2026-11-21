@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { adminService, getAdminErrorMessage, type AdminVocabulary, type AdminTopic, type AdminCourse } from '../../services/adminService';
 import { speakEnglish } from '../../utils/soundEffects';
-import { getVocabularyFallbackImage } from '../../utils/vocabularyVisuals';
+import { getVocabularyDisplayImage } from '../../utils/vocabularyVisuals';
 
 export default function Vocabularies() {
   const [vocabs, setVocabs] = useState<AdminVocabulary[]>([]);
@@ -250,7 +250,7 @@ export default function Vocabularies() {
                 <td style={{ padding: '14px 20px' }}>
                   <div style={{ width: '52px', height: '52px', borderRadius: '10px', overflow: 'hidden', backgroundColor: '#F1F5F9', border: '1px solid #E2E8F0' }}>
                     <img
-                      src={v.image_url || getVocabularyFallbackImage(v.word)}
+                      src={getVocabularyDisplayImage(v.word, v.image_url, v.meaning_vi)}
                       alt={v.word}
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
