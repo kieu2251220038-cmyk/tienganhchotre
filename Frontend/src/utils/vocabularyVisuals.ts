@@ -9,6 +9,11 @@ import motherIllustration from '../assets/vocabulary/mother.png';
 import sisterIllustration from '../assets/vocabulary/sister.png';
 import brotherIllustration from '../assets/vocabulary/brother.png';
 import familyIllustration from '../assets/vocabulary/family.png';
+import headIllustration from '../assets/vocabulary/head.png';
+import eyesIllustration from '../assets/vocabulary/eyes.png';
+import noseIllustration from '../assets/vocabulary/nose.png';
+import handsIllustration from '../assets/vocabulary/hands.png';
+import mouthIllustration from '../assets/vocabulary/mouth.png';
 import happyIllustration from '../assets/vocabulary/happy.png';
 import sadIllustration from '../assets/vocabulary/sad.png';
 import angryIllustration from '../assets/vocabulary/angry.png';
@@ -73,6 +78,12 @@ import colorRedIllustration from '../assets/vocabulary/color-red.png';
 import colorPinkIllustration from '../assets/vocabulary/color-pink.png';
 import bigIllustration from '../assets/vocabulary/big.png';
 import smallIllustration from '../assets/vocabulary/small.png';
+import shirtIllustration from '../assets/vocabulary/shirt.png';
+import shoesIllustration from '../assets/vocabulary/shoes.png';
+import hatIllustration from '../assets/vocabulary/hat.png';
+import dressIllustration from '../assets/vocabulary/dress.png';
+import iLikeCatsIllustration from '../assets/vocabulary/i-like-cats.png';
+import iLikeBooksIllustration from '../assets/vocabulary/i-like-books.png';
 
 const GENERATED_VISUALS: Record<string, string> = {
   please: pleaseIllustration,
@@ -86,6 +97,11 @@ const GENERATED_VISUALS: Record<string, string> = {
   sister: sisterIllustration,
   brother: brotherIllustration,
   family: familyIllustration,
+  head: headIllustration,
+  eyes: eyesIllustration,
+  nose: noseIllustration,
+  hands: handsIllustration,
+  mouth: mouthIllustration,
   happy: happyIllustration,
   sad: sadIllustration,
   angry: angryIllustration,
@@ -143,6 +159,14 @@ const GENERATED_VISUALS: Record<string, string> = {
   'teddy bear': toyTeddyBearIllustration,
   big: bigIllustration,
   small: smallIllustration,
+  shirt: shirtIllustration,
+  shoes: shoesIllustration,
+  hat: hatIllustration,
+  dress: dressIllustration,
+  'i like cats.': iLikeCatsIllustration,
+  'this is my mom.': motherIllustration,
+  'i am happy.': happyIllustration,
+  'i like books.': iLikeBooksIllustration,
 };
 
 const COLOR_GENERATED_VISUALS: Record<string, string> = {
