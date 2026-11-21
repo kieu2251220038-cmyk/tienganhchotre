@@ -136,7 +136,8 @@ import drawingIllustration from '../assets/vocabulary/drawing.png';
 import singingIllustration from '../assets/vocabulary/singing.png';
 import whereIllustration from '../assets/vocabulary/where.png';
 import howIllustration from '../assets/vocabulary/how.png';
-import thisThatIllustration from '../assets/vocabulary/this-that.png';
+import thisIllustration from '../assets/vocabulary/this.png';
+import thatIllustration from '../assets/vocabulary/that.png';
 import sorryIllustration from '../assets/vocabulary/sorry.png';
 import excuseMeIllustration from '../assets/vocabulary/excuse-me.png';
 import helpIllustration from '../assets/vocabulary/help.png';
@@ -286,8 +287,8 @@ const GENERATED_VISUALS: Record<string, string> = {
   where: whereIllustration,
   how: howIllustration,
   color: whatColorIsItIllustration,
-  this: thisThatIllustration,
-  that: thisThatIllustration,
+  this: thisIllustration,
+  that: thatIllustration,
   sorry: sorryIllustration,
   'excuse me': excuseMeIllustration,
   help: helpIllustration,
