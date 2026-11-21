@@ -71,6 +71,8 @@ import colorYellowIllustration from '../assets/vocabulary/color-yellow.png';
 import colorBlueIllustration from '../assets/vocabulary/color-blue.png';
 import colorRedIllustration from '../assets/vocabulary/color-red.png';
 import colorPinkIllustration from '../assets/vocabulary/color-pink.png';
+import bigIllustration from '../assets/vocabulary/big.png';
+import smallIllustration from '../assets/vocabulary/small.png';
 
 const GENERATED_VISUALS: Record<string, string> = {
   please: pleaseIllustration,
@@ -139,6 +141,8 @@ const GENERATED_VISUALS: Record<string, string> = {
   doll: toyDollIllustration,
   car: toyCarIllustration,
   'teddy bear': toyTeddyBearIllustration,
+  big: bigIllustration,
+  small: smallIllustration,
 };
 
 const COLOR_GENERATED_VISUALS: Record<string, string> = {
