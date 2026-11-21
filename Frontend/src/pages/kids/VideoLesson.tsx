@@ -5,6 +5,7 @@ import { progressService, type LessonRewardResult } from '../../services/progres
 import { authService } from '../../services/authService';
 import type { Lesson, Vocabulary } from '../../types';
 import { speakEnglish, sounds } from '../../utils/soundEffects';
+import { getVocabularyDisplayImage } from '../../utils/vocabularyVisuals';
 import RewardPopup from '../../components/RewardPopup';
 
 export default function VideoLesson() {
@@ -44,7 +45,7 @@ export default function VideoLesson() {
         <RewardPopup
           reward={reward}
           lessonTitle={lesson?.title || 'Bài Học Video'}
-          onContinue={() => { setReward(null); navigate('/dashboard'); }}
+          onContinue={() => { setReward(null); navigate(`/dashboard?continueLessonId=${Number(lessonId)}`); }}
           onClose={() => setReward(null)}
         />
       )}
@@ -155,9 +156,11 @@ export default function VideoLesson() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '40px' }}>
-                    {v.word === 'Dog' ? '🐶' : v.word === 'Cat' ? '🐱' : v.word === 'Bird' ? '🐦' : '🐘'}
-                  </span>
+                  <img
+                    src={getVocabularyDisplayImage(v.word, v.image_url)}
+                    alt={v.word}
+                    style={{ width: '52px', height: '52px', objectFit: 'cover', borderRadius: '14px', flexShrink: 0 }}
+                  />
                   <div>
                     <div style={{ fontFamily: 'Fredoka, sans-serif', fontWeight: 800, fontSize: '21px', color: '#1E293B' }}>
                       {v.word}

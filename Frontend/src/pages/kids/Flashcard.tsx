@@ -6,7 +6,7 @@ import { progressService, type LessonRewardResult } from '../../services/progres
 import { authService } from '../../services/authService';
 import type { Vocabulary } from '../../types';
 import { speakEnglish, sounds } from '../../utils/soundEffects';
-import { getVocabularyFallbackImage } from '../../utils/vocabularyVisuals';
+import { getVocabularyDisplayImage, getVocabularyFallbackImage } from '../../utils/vocabularyVisuals';
 import RewardPopup from '../../components/RewardPopup';
 
 export default function Flashcard() {
@@ -35,10 +35,10 @@ export default function Flashcard() {
     phonetic: '/ˈæpəl/'
   };
   const fallbackImage = getVocabularyFallbackImage(currentWord.word);
-  const [imageSrc, setImageSrc] = useState(currentWord.image_url || fallbackImage);
+  const [imageSrc, setImageSrc] = useState(getVocabularyDisplayImage(currentWord.word, currentWord.image_url));
 
   useEffect(() => {
-    setImageSrc(currentWord.image_url || getVocabularyFallbackImage(currentWord.word));
+    setImageSrc(getVocabularyDisplayImage(currentWord.word, currentWord.image_url));
   }, [currentWord.word, currentWord.image_url]);
 
   const handlePronounce = (e?: React.MouseEvent) => {
@@ -87,7 +87,7 @@ export default function Flashcard() {
         <RewardPopup
           reward={reward}
           lessonTitle="Học Từ Vựng Flashcard"
-          onContinue={() => { setReward(null); navigate('/dashboard'); }}
+          onContinue={() => { setReward(null); navigate(`/dashboard?continueLessonId=${lessonId}`); }}
           onClose={() => setReward(null)}
         />
       )}

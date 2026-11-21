@@ -6,7 +6,7 @@ import { userDataService } from '../../services/userDataService';
 import { progressService, type LessonRewardResult } from '../../services/progressService';
 import { miniGameService, type MiniGame } from '../../services/miniGameService';
 import { courseService } from '../../services/courseService';
-import { getVocabularyFallbackImage } from '../../utils/vocabularyVisuals';
+import { getVocabularyDisplayImage, getVocabularyFallbackImage } from '../../utils/vocabularyVisuals';
 import FireworksCelebration from '../../components/FireworksCelebration';
 import RewardPopup from '../../components/RewardPopup';
 
@@ -266,6 +266,16 @@ const GAME_TOPICS: GameTopic[] = [
   }
 ];
 
+const withChildFriendlyImages = (topics: GameTopic[]): GameTopic[] => topics.map((topic) => ({
+  ...topic,
+  words: topic.words.map((word) => ({
+    ...word,
+    image: getVocabularyDisplayImage(word.word, word.image)
+  }))
+}));
+
+const CHILD_FRIENDLY_GAME_TOPICS = withChildFriendlyImages(GAME_TOPICS);
+
 const COUNTING_OBJECTS: GameWord[] = [
   { id: 901, word: 'Apple', meaning: 'quả táo', image: getVocabularyFallbackImage('Apple') },
   { id: 902, word: 'Ball', meaning: 'quả bóng', image: getVocabularyFallbackImage('Ball') },
@@ -328,7 +338,7 @@ export default function MiniGame() {
 
   // Chỉ nhận game đang bật từ CSDL. Không dùng localStorage để tránh trạng thái cũ.
   const [gameConfigs, setGameConfigs] = useState<MiniGame[]>([]);
-  const [gameTopics, setGameTopics] = useState<GameTopic[]>(GAME_TOPICS);
+  const [gameTopics, setGameTopics] = useState<GameTopic[]>(CHILD_FRIENDLY_GAME_TOPICS);
   const [loadingGames, setLoadingGames] = useState(true);
   const [gameLoadError, setGameLoadError] = useState('');
 
@@ -357,7 +367,7 @@ export default function MiniGame() {
 
   const getFallbackTopic = (topicName: string): GameTopic => {
     const normalizedName = topicName.toLowerCase();
-    return GAME_TOPICS.find((topic) => normalizedName.includes(topic.id)) || GAME_TOPICS[0];
+    return CHILD_FRIENDLY_GAME_TOPICS.find((topic) => normalizedName.includes(topic.id)) || CHILD_FRIENDLY_GAME_TOPICS[0];
   };
 
   // Tab chế độ và chủ đề
@@ -401,7 +411,7 @@ export default function MiniGame() {
   const [selectedSentenceTokens, setSelectedSentenceTokens] = useState<SentenceToken[]>([]);
   const [sentenceSuccessCount, setSentenceSuccessCount] = useState<number>(0);
 
-  const activeTopic = gameTopics.find((t) => t.id === selectedTopicId) || gameTopics[0] || GAME_TOPICS[0];
+  const activeTopic = gameTopics.find((t) => t.id === selectedTopicId) || gameTopics[0] || CHILD_FRIENDLY_GAME_TOPICS[0];
 
   useEffect(() => {
     const requestedGameId = Number(searchParams.get('gameId'));
@@ -445,7 +455,7 @@ export default function MiniGame() {
             id: vocabulary.id,
             word: vocabulary.word,
             meaning: vocabulary.meaning_vi,
-            image: vocabulary.image_url || getVocabularyFallbackImage(vocabulary.word)
+            image: getVocabularyDisplayImage(vocabulary.word, vocabulary.image_url)
           }));
           return {
             id: String(game.id),
@@ -481,7 +491,7 @@ export default function MiniGame() {
   }, [currentMode, selectedTopicId, gameTopics]);
 
   const initGameByMode = (mode: GameMode, topicId: string, currentRound: number = 1) => {
-    const topic = gameTopics.find((t) => t.id === topicId) || gameTopics[0] || GAME_TOPICS[0];
+    const topic = gameTopics.find((t) => t.id === topicId) || gameTopics[0] || CHILD_FRIENDLY_GAME_TOPICS[0];
     setIsGameOver(false);
 
     if (mode === 'MATCH') {
@@ -793,7 +803,7 @@ export default function MiniGame() {
         <RewardPopup
           reward={reward}
           lessonTitle="Hoàn thành Mini Game"
-          onContinue={() => { setReward(null); navigate('/dashboard'); }}
+          onContinue={() => { setReward(null); navigate(gameLessonId > 0 ? `/dashboard?continueLessonId=${gameLessonId}` : '/dashboard'); }}
           onClose={() => setReward(null)}
         />
       )}

@@ -1125,6 +1125,8 @@ h1, h2, h3, h4, h5, h6 {
 .classic-stage-parts { display: flex; flex-wrap: wrap; gap: 5px; }
 .classic-stage-parts span { padding: 4px 7px; border-radius: 7px; background: #eafbf1; color: #08784e; font-size: 10px; font-weight: 900; white-space: nowrap; }
 .classic-stage-parts span.is-disabled { background: #f2f4f6; color: #a3afbb; }
+.classic-stage-parts.has-interactive-access span.is-disabled { background: #eafbf1; color: #08784e; }
+.classic-stage-parts.has-interactive-access span { cursor: pointer; }
 
 .classic-stage-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 12px; color: #6b8194; font-size: 11px; }
 .classic-stage-footer button { padding: 7px 12px; border: 0; border-radius: 9px; background: #10b981; color: #fff; font: inherit; font-size: 11px; font-weight: 900; cursor: pointer; box-shadow: 0 3px 0 #079669; }

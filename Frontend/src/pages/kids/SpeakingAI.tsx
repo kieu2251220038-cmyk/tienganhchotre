@@ -705,7 +705,7 @@ export default function SpeakingAI() {
         <RewardPopup
           reward={reward}
           lessonTitle="Hoàn thành Luyện Nói AI"
-          onContinue={() => { setReward(null); navigate('/dashboard'); }}
+          onContinue={() => { setReward(null); navigate(`/dashboard?continueLessonId=${lessonId}`); }}
           onClose={() => setReward(null)}
         />
       )}

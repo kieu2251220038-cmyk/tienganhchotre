@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { courseService } from '../../services/courseService';
 import { progressService, type ChestRewardResult, type ChestStatus } from '../../services/progressService';
 import { authService } from '../../services/authService';
@@ -75,8 +75,10 @@ function isStudyLesson(lesson: LessonWithTopic) {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const user = authService.getCurrentUser();
   const accountAge = getAge(user.age_group);
+  const continueLessonId = Number(searchParams.get('continueLessonId')) || 0;
   const [unlockedAge, setUnlockedAge] = useState(accountAge);
   const [selectedCourseId, setSelectedCourseId] = useState<number | null>(null);
   const [levels, setLevels] = useState<LevelTab[]>([]);
@@ -96,7 +98,6 @@ export default function Dashboard() {
   const completedIds = useMemo(() => new Set((rewards?.completed_lessons || []).map((item) => Number(item.lesson_id))), [rewards]);
   const isComplete = (lesson: LessonWithTopic) => completedIds.has(lesson.id) || Boolean(lesson.is_completed);
   const canAccessInteractive = hasAllAgeAccess || selectedAge <= interactiveAge;
-  const isAvailableLesson = (lesson: LessonWithTopic) => isStudyLesson(lesson) || canAccessInteractive;
 
   const stages = useMemo<PathStage[]>(() => {
     const groups: LessonWithTopic[][] = [];
@@ -113,15 +114,21 @@ export default function Dashboard() {
     }));
   }, [lessons]);
 
+  // Khi phần được mở của một chặng đã hoàn thành, cho phép mở lại toàn bộ
+  // chặng (bao gồm Nói AI, Quiz và Chơi) mà không thay đổi tiến độ đã lưu.
+  const getAvailableLessons = (stage: PathStage) => (
+    stage.lessons.filter((lesson) => isStudyLesson(lesson) || canAccessInteractive)
+  );
+  const stageIsComplete = (stage: PathStage) => {
+    const stageLessons = getAvailableLessons(stage);
+    return stageLessons.length > 0 && stageLessons.every(isComplete);
+  };
+  const canReplayStage = (stage: PathStage) => canAccessInteractive || stageIsComplete(stage);
   const studyLessons = stages.flatMap((stage) => stage.lessons.filter(isStudyLesson));
-  const availableLessons = stages.flatMap((stage) => stage.lessons.filter(isAvailableLesson));
+  const availableLessons = stages.flatMap(getAvailableLessons);
   const completedStudyLessons = studyLessons.filter(isComplete).length;
   const completedAvailableLessons = availableLessons.filter(isComplete).length;
   const pathProgress = availableLessons.length ? Math.round((completedAvailableLessons / availableLessons.length) * 100) : 0;
-  const stageIsComplete = (stage: PathStage) => {
-    const stageLessons = stage.lessons.filter(isAvailableLesson);
-    return stageLessons.length > 0 && stageLessons.every(isComplete);
-  };
   const completedStages = stages.filter(stageIsComplete).length;
   const allComplete = stages.length > 0 && stages.every(stageIsComplete);
   const currentStageIndex = stages.findIndex((stage) => !stageIsComplete(stage));
@@ -180,6 +187,19 @@ export default function Dashboard() {
   }, [levels, selectedCourseId]);
 
   useEffect(() => {
+    if (!continueLessonId || levels.length === 0) return;
+    let mounted = true;
+    courseService.getLessonDetail(continueLessonId)
+      .then(({ lesson }) => {
+        if (!mounted) return;
+        const targetLevel = levels.find((level) => level.age === getAge(lesson.age_group, 0));
+        if (targetLevel) setSelectedCourseId(targetLevel.courseId);
+      })
+      .catch(() => undefined);
+    return () => { mounted = false; };
+  }, [continueLessonId, levels]);
+
+  useEffect(() => {
     progressService.getUserRewards(user.id).then(setRewards).catch(() => setRewards(null));
   }, [user.id]);
 
@@ -224,8 +244,23 @@ export default function Dashboard() {
     else if (lesson.lesson_type === 'GAME') navigate(`/game?gameId=${lesson.mini_game_id}&lessonId=${lesson.id}`);
   };
 
+  const openCompletedStagePart = (event: React.MouseEvent<HTMLDivElement>, stage: PathStage) => {
+    if (!stageIsComplete(stage)) return;
+    const clickedPart = (event.target as HTMLElement).closest('span');
+    if (!clickedPart) return;
+    const partIndex = Array.from(event.currentTarget.children).indexOf(clickedPart);
+    const partTypes: Array<Lesson['lesson_type'] | 'STUDY'> = ['STUDY', 'SPEAKING', 'QUIZ', 'GAME'];
+    const partType = partTypes[partIndex];
+    const lesson = partType === 'STUDY'
+      ? stage.lessons.find(isStudyLesson)
+      : stage.lessons.find((item) => item.lesson_type === partType);
+    if (lesson) openLesson(lesson);
+  };
+
   const openStage = (stage: PathStage) => {
-    const nextLesson = stage.lessons.filter(isAvailableLesson).find((lesson) => !isComplete(lesson)) || stage.lessons.find(isAvailableLesson);
+    const availableStageLessons = getAvailableLessons(stage);
+    const nextLesson = availableStageLessons.find((lesson) => !isComplete(lesson))
+      || (stageIsComplete(stage) ? stage.lessons.find((lesson) => !isComplete(lesson)) || stage.lessons[0] : availableStageLessons[0]);
     if (nextLesson) openLesson(nextLesson);
   };
 
@@ -310,11 +345,18 @@ export default function Dashboard() {
               </div>
 
               {stages.map((stage, index) => {
-                const availableLessons = stage.lessons.filter(isAvailableLesson);
+                const availableLessons = getAvailableLessons(stage);
                 const completedCount = availableLessons.filter(isComplete).length;
                 const stageComplete = stageIsComplete(stage);
+                const stageInteractiveOpen = canReplayStage(stage);
                 const stageProgress = availableLessons.length ? Math.min(100, Math.round((completedCount / availableLessons.length) * 100)) : 0;
-                const nextLesson = availableLessons.find((lesson) => !isComplete(lesson));
+                const completedLessonIndex = continueLessonId
+                  ? stage.lessons.findIndex((lesson) => lesson.id === continueLessonId)
+                  : -1;
+                const continuationLesson = completedLessonIndex >= 0 ? stage.lessons[completedLessonIndex + 1] : undefined;
+                const nextLesson = continuationLesson
+                  || availableLessons.find((lesson) => !isComplete(lesson))
+                  || (stageComplete ? stage.lessons.find((lesson) => !isComplete(lesson)) || stage.lessons[0] : undefined);
                 return (
                   <article key={stage.id} className={`classic-stage-row ${index % 2 ? 'is-reverse' : ''} ${stageComplete ? 'is-complete' : ''}`}>
                     <button className="classic-stage-node" style={{ '--stage-progress': `${stageProgress}%` } as React.CSSProperties} onClick={() => openStage(stage)} disabled={availableLessons.length === 0} aria-label={`Mở ${stage.title}`}>
@@ -323,7 +365,7 @@ export default function Dashboard() {
                     <div className="classic-stage-card">
                       <h2>{stage.title}</h2>
                       <p className="classic-stage-topic">{stage.topicName}</p>
-                      <div className="classic-stage-parts">
+                      <div className={`classic-stage-parts ${stageInteractiveOpen ? 'has-interactive-access' : ''}`} onClick={(event) => void openCompletedStagePart(event, stage)}>
                         <span className={completedCount > 0 ? 'is-done' : ''}>📖 Học bài</span>
                         <span className={!canAccessInteractive ? 'is-disabled' : ''}>🎙️ Nói AI</span>
                         <span className={!canAccessInteractive ? 'is-disabled' : ''}>🎯 Quiz</span>

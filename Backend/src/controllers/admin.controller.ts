@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import pool from '../config/database';
 
-const uploadDirectory = path.resolve(process.cwd(), 'uploads');
+const uploadDirectory = path.resolve(process.cwd(), 'uploads', 'vocabulary');
 const maxImageBytes = 5 * 1024 * 1024;
 
 function toPublicMediaUrl(req: Request, fileUrl: string | null | undefined): string | null {
@@ -33,7 +33,7 @@ async function saveImageData(imageData: unknown): Promise<string | null> {
     const filename = `vocab-${Date.now()}-${crypto.randomBytes(6).toString('hex')}.${extension}`;
     await fs.mkdir(uploadDirectory, { recursive: true });
     await fs.writeFile(path.join(uploadDirectory, filename), imageBuffer);
-    return `/uploads/${filename}`;
+    return `/uploads/vocabulary/${filename}`;
 }
 
 async function createMediaAsset(word: string, fileUrl: string): Promise<number> {

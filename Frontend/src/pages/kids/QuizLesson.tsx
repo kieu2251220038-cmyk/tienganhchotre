@@ -5,7 +5,7 @@ import { progressService, type LessonRewardResult } from '../../services/progres
 import { authService } from '../../services/authService';
 import type { Question, Answer } from '../../types';
 import { speakEnglish, sounds } from '../../utils/soundEffects';
-import { getVocabularyFallbackImage } from '../../utils/vocabularyVisuals';
+import { getVocabularyDisplayImage } from '../../utils/vocabularyVisuals';
 import RewardPopup from '../../components/RewardPopup';
 import FireworksCelebration from '../../components/FireworksCelebration';
 
@@ -133,7 +133,7 @@ export default function QuizLesson() {
         <RewardPopup
           reward={reward}
           lessonTitle="Quiz Trắc Nghiệm"
-          onContinue={() => { setReward(null); navigate('/dashboard'); }}
+          onContinue={() => { setReward(null); navigate(`/dashboard?continueLessonId=${Number(lessonId)}`); }}
           onClose={() => setReward(null)}
         />
       )}
@@ -310,7 +310,7 @@ export default function QuizLesson() {
                     marginBottom: '12px'
                   }}>
                     <img
-                      src={ans.media_url || getVocabularyFallbackImage(ans.answer_text)}
+                      src={getVocabularyDisplayImage(ans.answer_text, ans.media_url)}
                       alt={ans.answer_text}
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
