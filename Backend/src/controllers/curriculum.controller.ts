@@ -95,6 +95,7 @@ export const getCurriculumRoadmap = async (req: Request, res: Response): Promise
                      WHERE l.topic_id = ?
                        AND l.status = "PUBLISHED"
                        AND l.approval_status = "APPROVED"
+                        AND l.lesson_type <> "VIDEO"
                        AND (l.lesson_type <> "GAME" OR (mg.id IS NOT NULL AND mg.is_active = 1))
                      ORDER BY l.sort_order ASC`,
                     [topic.id]
@@ -157,6 +158,7 @@ export const searchMaterials = async (req: Request, res: Response): Promise<void
             LEFT JOIN users u_rev ON l.reviewed_by = u_rev.id
             WHERE l.status = 'PUBLISHED'
               AND l.approval_status = 'APPROVED'
+              AND l.lesson_type <> 'VIDEO'
         `;
 
         const params: any[] = [];

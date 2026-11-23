@@ -52,7 +52,7 @@ function toLevelTab(course: Course, index: number): LevelTab {
   };
 }
 
-const STUDY_TYPES = new Set<Lesson['lesson_type']>(['FLASHCARD', 'VIDEO']);
+const STUDY_TYPES = new Set<Lesson['lesson_type']>(['FLASHCARD']);
 
 const EMPTY_LEVEL: LevelTab = {
   age: 3,
@@ -238,7 +238,6 @@ export default function Dashboard() {
   const openLesson = (lesson: LessonWithTopic) => {
     sounds.playClick();
     if (lesson.lesson_type === 'FLASHCARD') navigate(`/lessons/${lesson.topic_id}/flashcard?lessonId=${lesson.id}`);
-    else if (lesson.lesson_type === 'VIDEO') navigate(`/lessons/${lesson.id}/video`);
     else if (lesson.lesson_type === 'SPEAKING') navigate(`/speaking?age=${lesson.target_age || lesson.age_group || ''}&topicId=${lesson.topic_id}&lessonId=${lesson.id}`);
     else if (lesson.lesson_type === 'QUIZ') navigate(`/lessons/${lesson.id}/quiz`);
     else if (lesson.lesson_type === 'GAME') navigate(`/game?gameId=${lesson.mini_game_id}&lessonId=${lesson.id}`);

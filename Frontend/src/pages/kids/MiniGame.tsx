@@ -16,6 +16,7 @@ interface GameWord {
   word: string;
   meaning: string;
   image: string;
+  hasUploadedImage?: boolean;
 }
 
 interface GameTopic {
@@ -24,7 +25,18 @@ interface GameTopic {
   emoji: string;
   color: string;
   words: GameWord[];
+  hasVocabularyContent?: boolean;
+  missingImageWords?: string[];
 }
+
+const shuffle = <T,>(items: T[]): T[] => {
+  const shuffled = [...items];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
+  }
+  return shuffled;
+};
 
 const GAME_TOPICS: GameTopic[] = [
   {
@@ -276,13 +288,6 @@ const withChildFriendlyImages = (topics: GameTopic[]): GameTopic[] => topics.map
 
 const CHILD_FRIENDLY_GAME_TOPICS = withChildFriendlyImages(GAME_TOPICS);
 
-const COUNTING_OBJECTS: GameWord[] = [
-  { id: 901, word: 'Apple', meaning: 'quả táo', image: getVocabularyFallbackImage('Apple') },
-  { id: 902, word: 'Ball', meaning: 'quả bóng', image: getVocabularyFallbackImage('Ball') },
-  { id: 903, word: 'Star', meaning: 'ngôi sao', image: getVocabularyFallbackImage('Star') },
-  { id: 904, word: 'Fish', meaning: 'con cá', image: getVocabularyFallbackImage('Fish') }
-];
-
 const SENTENCE_BANK: Record<string, string[]> = {
   greetings: ['Hello, my name is Anna.', 'Good morning, teacher.', 'Nice to meet you.', 'Goodbye, see you soon.'],
   'about me': ['My name is Anna.', 'I am six years old.', 'I like English.', 'This is my friend.'],
@@ -332,6 +337,23 @@ const SENTENCE_TRANSLATIONS: Record<string, string> = {
   'The river flows through the forest.': 'Dòng sông chảy qua khu rừng.',
   'The mountain is high.': 'Ngọn núi rất cao.',
   'Many animals live in the forest.': 'Nhiều con vật sống trong khu rừng.'
+};
+
+const buildSentenceQuestion = (topic: GameTopic, word: GameWord, seed: number): SentenceQuestion => {
+  const normalizedTopic = topic.name.toLowerCase();
+  const normalizedWord = word.word.trim().toLowerCase();
+  const bankKey = Object.keys(SENTENCE_BANK).find((key) => normalizedTopic.includes(key)) || 'greetings';
+  const sentenceBank = SENTENCE_BANK[bankKey] || SENTENCE_BANK.greetings;
+  const sentence = sentenceBank.find((candidate) => candidate.toLowerCase().includes(normalizedWord)) || `This is ${word.word}.`;
+  const translation = SENTENCE_TRANSLATIONS[sentence] || `Đây là ${word.meaning}.`;
+  const tokens = sentence.split(' ').map((text, index) => ({ id: `${seed}-${index}-${text}`, text }));
+
+  return {
+    sentence,
+    translation,
+    tokens,
+    shuffledTokens: shuffle(tokens)
+  };
 };
 
 type GameMode = 'MATCH' | 'MEMORY' | 'LISTEN' | 'COUNT' | 'ORDER';
@@ -443,15 +465,22 @@ export default function MiniGame() {
   const [targetWord, setTargetWord] = useState<GameWord | null>(null);
   const [listenOptions, setListenOptions] = useState<GameWord[]>([]);
   const [listenSuccessCount, setListenSuccessCount] = useState<number>(0);
+  const [listenQueue, setListenQueue] = useState<GameWord[]>([]);
+  const [listenQuestionIndex, setListenQuestionIndex] = useState<number>(0);
 
   // ================= 4. STATE GAME ĐẾM ĐỒ VẬT =================
   const [countQuestion, setCountQuestion] = useState<CountQuestion | null>(null);
   const [countSuccessCount, setCountSuccessCount] = useState<number>(0);
+  const [countQueue, setCountQueue] = useState<GameWord[]>([]);
+  const [countQuestionIndex, setCountQuestionIndex] = useState<number>(0);
+  const [countGameError, setCountGameError] = useState('');
 
   // ================= 5. STATE GAME SẮP XẾP CÂU =================
   const [sentenceQuestion, setSentenceQuestion] = useState<SentenceQuestion | null>(null);
   const [selectedSentenceTokens, setSelectedSentenceTokens] = useState<SentenceToken[]>([]);
   const [sentenceSuccessCount, setSentenceSuccessCount] = useState<number>(0);
+  const [sentenceQueue, setSentenceQueue] = useState<SentenceQuestion[]>([]);
+  const [sentenceQuestionIndex, setSentenceQuestionIndex] = useState<number>(0);
 
   const activeTopic = gameTopics.find((t) => t.id === selectedTopicId) || gameTopics[0] || CHILD_FRIENDLY_GAME_TOPICS[0];
 
@@ -498,14 +527,17 @@ export default function MiniGame() {
             id: vocabulary.id,
             word: vocabulary.word,
             meaning: vocabulary.meaning_vi,
-            image: getVocabularyDisplayImage(vocabulary.word, vocabulary.image_url, vocabulary.meaning_vi)
+            image: getVocabularyDisplayImage(vocabulary.word, vocabulary.image_url, vocabulary.meaning_vi),
+            hasUploadedImage: Boolean(vocabulary.image_url?.trim())
           }));
           return {
             id: String(game.id),
             name: game.topic_name,
             emoji: fallback.emoji,
             color: fallback.color,
-            words: words.length > 0 ? words : fallback.words
+            words: words.length > 0 ? words : fallback.words,
+            hasVocabularyContent: words.length > 0,
+            missingImageWords: words.filter((word) => !word.hasUploadedImage).map((word) => word.word)
           };
         }));
 
@@ -529,21 +561,18 @@ export default function MiniGame() {
   // Khởi tạo trò chơi theo chế độ
   useEffect(() => {
     if (selectedTopicId && gameTopics.length > 0) {
-      initGameByMode(currentMode, selectedTopicId, 1);
+      initGameByMode(currentMode, selectedTopicId);
     }
   }, [currentMode, selectedTopicId, gameTopics]);
 
-  const initGameByMode = (mode: GameMode, topicId: string, currentRound: number = 1) => {
+  const initGameByMode = (mode: GameMode, topicId: string) => {
     const topic = gameTopics.find((t) => t.id === topicId) || gameTopics[0] || CHILD_FRIENDLY_GAME_TOPICS[0];
     setIsGameOver(false);
+    setCountGameError('');
 
     if (mode === 'MATCH') {
-      // Lấy 4 từ cho vòng chơi này
-      const startIndex = ((currentRound - 1) * 4) % topic.words.length;
-      let wordsSlice = topic.words.slice(startIndex, startIndex + 4);
-      if (wordsSlice.length < 4) {
-        wordsSlice = topic.words.slice(0, 4);
-      }
+      // Game nối từ và tranh dùng toàn bộ từ vựng của chủ đề; chỉ xáo trộn thứ tự hiển thị.
+      const wordsSlice = shuffle(topic.words);
 
       const fresh: MatchItem[] = wordsSlice.map((w) => ({
         id: w.id,
@@ -554,12 +583,12 @@ export default function MiniGame() {
       }));
 
       setMatchWords(fresh);
-      setShuffledImages([...fresh].sort(() => Math.random() - 0.5));
+      setShuffledImages(shuffle(fresh));
       setSelectedWordId(null);
       setSelectedImageId(null);
     } else if (mode === 'MEMORY') {
-      // Tạo 4 cặp thẻ (8 thẻ tổng cộng)
-      const selectedWords = topic.words.slice(0, 4);
+      // Game lật thẻ dùng toàn bộ từ vựng của chủ đề; mỗi từ tạo một cặp chữ và hình.
+      const selectedWords = shuffle(topic.words);
       const cards: MemoryCard[] = [];
 
       selectedWords.forEach((w) => {
@@ -584,67 +613,96 @@ export default function MiniGame() {
         });
       });
 
-      setMemoryCards(cards.sort(() => Math.random() - 0.5));
+      setMemoryCards(shuffle(cards));
       setFlippedCardIds([]);
     } else if (mode === 'COUNT') {
+      if (!topic.hasVocabularyContent) {
+        setCountQuestion(null);
+        setCountGameError('Game Đếm số chưa thể bắt đầu vì chủ đề chưa có dữ liệu từ vựng. Vui lòng thêm từ vựng vào đúng chủ đề rồi thử lại.');
+        return;
+      }
+
+      if (topic.missingImageWords && topic.missingImageWords.length > 0) {
+        setCountQuestion(null);
+        setCountGameError(`Game Đếm số chưa thể bắt đầu vì các từ sau chưa có ảnh: ${topic.missingImageWords.join(', ')}. Vui lòng bổ sung ảnh trong Quản lý Từ vựng & Media rồi thử lại.`);
+        return;
+      }
+
+      // Mỗi từ vựng của chủ đề tạo một câu hỏi; thứ tự câu hỏi được xáo trộn.
+      const queue = shuffle(topic.words);
+      setCountQueue(queue);
+      setCountQuestionIndex(0);
       setCountSuccessCount(0);
-      nextCountingQuestion();
+      nextCountingQuestion(topic, 0, queue);
     } else if (mode === 'ORDER') {
+      // Tạo một câu hỏi cho từng từ vựng của bài học, sau đó xáo trộn thứ tự câu hỏi.
+      const queue = shuffle(topic.words.map((word, index) => buildSentenceQuestion(topic, word, index)));
+      setSentenceQueue(queue);
+      setSentenceQuestionIndex(0);
       setSentenceSuccessCount(0);
       setSelectedSentenceTokens([]);
-      nextSentenceQuestion(topic);
+      nextSentenceQuestion(topic, 0, queue);
     } else if (mode === 'LISTEN') {
-      // Game Nghe: chọn 1 từ ngẫu nhiên và 3 từ gây nhiễu
-      nextListenQuestion(topic);
+      // Game Nghe: xáo trộn toàn bộ từ vựng, mỗi câu dùng 1 từ trong hàng đợi này.
+      const queue = shuffle(topic.words);
+      setListenQueue(queue);
+      setListenQuestionIndex(0);
+      setListenSuccessCount(0);
+      nextListenQuestion(topic, 0, queue);
     }
   };
 
-  const nextCountingQuestion = () => {
-    const object = COUNTING_OBJECTS[Math.floor(Math.random() * COUNTING_OBJECTS.length)] || COUNTING_OBJECTS[0];
-    const count = Math.floor(Math.random() * 5) + 1;
-    const options = new Set<number>([count, Math.max(1, count - 1), Math.min(5, count + 1)]);
+  const nextCountingQuestion = (topic: GameTopic, nextIndex = countQuestionIndex + 1, queueOverride?: GameWord[]) => {
+    const queue = queueOverride && queueOverride.length > 0
+      ? queueOverride
+      : countQueue.length > 0
+        ? countQueue
+        : shuffle(topic.words);
+    const object = queue[nextIndex];
+    if (!object) return;
 
-    while (options.size < 4) {
-      options.add(Math.floor(Math.random() * 5) + 1);
-    }
+    const count = Math.floor(Math.random() * 5) + 1;
+    const distractors = shuffle([1, 2, 3, 4, 5].filter((option) => option !== count)).slice(0, 3);
 
     setCountQuestion({
       object,
       count,
-      options: Array.from(options).sort(() => Math.random() - 0.5)
+      options: shuffle([count, ...distractors])
     });
+    setCountQuestionIndex(nextIndex);
     setTimeout(() => {
       void speakBilingual(`How many ${object.word.toLowerCase()}?`, `Có bao nhiêu ${object.meaning.toLowerCase()}?`);
     }, 350);
   };
 
-  const nextSentenceQuestion = (topic: GameTopic) => {
-    const normalizedTopic = topic.name.toLowerCase();
-    const bankKey = Object.keys(SENTENCE_BANK).find((key) => normalizedTopic.includes(key)) || 'greetings';
-    const sentenceBank = SENTENCE_BANK[bankKey] || SENTENCE_BANK.greetings;
-    const sentence = sentenceBank[Math.floor(Math.random() * sentenceBank.length)] || sentenceBank[0];
-    const translation = SENTENCE_TRANSLATIONS[sentence] || 'Bé hãy sắp xếp câu đúng.';
-    const tokens = sentence.split(' ').map((text, index) => ({ id: `${index}-${text}`, text }));
+  const nextSentenceQuestion = (topic: GameTopic, nextIndex = sentenceQuestionIndex + 1, queueOverride?: SentenceQuestion[]) => {
+    const queue = queueOverride && queueOverride.length > 0
+      ? queueOverride
+      : sentenceQueue.length > 0
+        ? sentenceQueue
+        : shuffle(topic.words.map((word, index) => buildSentenceQuestion(topic, word, index)));
+    const question = queue[nextIndex];
+    if (!question) return;
 
-    setSentenceQuestion({
-      sentence,
-      translation,
-      tokens,
-      shuffledTokens: [...tokens].sort(() => Math.random() - 0.5)
-    });
+    setSentenceQuestion(question);
+    setSentenceQuestionIndex(nextIndex);
     setSelectedSentenceTokens([]);
     setTimeout(() => {
-      void speakBilingual(sentence, translation);
+      void speakBilingual(question.sentence, question.translation);
     }, 350);
   };
 
-  const nextListenQuestion = (topic: GameTopic) => {
-    const shuffled = [...topic.words].sort(() => Math.random() - 0.5);
-    const chosen = shuffled[0];
-    const options = shuffled.slice(0, 4).sort(() => Math.random() - 0.5);
+  const nextListenQuestion = (topic: GameTopic, nextIndex = listenQuestionIndex + 1, queueOverride?: GameWord[]) => {
+    const queue = queueOverride && queueOverride.length > 0 ? queueOverride : listenQueue;
+    const chosen = queue[nextIndex];
+    if (!chosen) return;
+
+    const distractors = shuffle(topic.words.filter((word) => word.id !== chosen.id)).slice(0, 3);
+    const options = shuffle([chosen, ...distractors]);
 
     setTargetWord(chosen);
     setListenOptions(options);
+    setListenQuestionIndex(nextIndex);
 
     // Tự động phát âm từ cần tìm
     setTimeout(() => {
@@ -697,7 +755,7 @@ export default function MiniGame() {
   const handleNextRoundMatch = () => {
     const nextR = round + 1;
     setRound(nextR);
-    initGameByMode('MATCH', selectedTopicId, nextR);
+    initGameByMode('MATCH', selectedTopicId);
   };
 
   // ================= XỬ LÝ GAME 2: MEMORY FLIP =================
@@ -760,13 +818,14 @@ export default function MiniGame() {
       const nextCount = listenSuccessCount + 1;
       setListenSuccessCount(nextCount);
 
-      if (nextCount >= 5) {
+      const totalQuestions = listenQueue.length || activeTopic.words.length;
+      if (nextCount >= totalQuestions) {
         sounds.playVictory();
         setIsGameOver(true);
         void completeGame(getTopicPoints(selectedTopicId));
       } else {
         setTimeout(() => {
-          nextListenQuestion(activeTopic);
+          nextListenQuestion(activeTopic, nextCount);
         }, 600);
       }
     } else {
@@ -790,12 +849,13 @@ export default function MiniGame() {
       const nextCount = countSuccessCount + 1;
       setCountSuccessCount(nextCount);
 
-      if (nextCount >= 5) {
+      const totalQuestions = countQueue.length || activeTopic.words.length;
+      if (nextCount >= totalQuestions) {
         sounds.playVictory();
         setIsGameOver(true);
         void completeGame(getTopicPoints(selectedTopicId));
       } else {
-        setTimeout(nextCountingQuestion, 700);
+        setTimeout(() => nextCountingQuestion(activeTopic, nextCount), 700);
       }
     } else {
       sounds.playWrong();
@@ -817,12 +877,13 @@ export default function MiniGame() {
         const nextCount = sentenceSuccessCount + 1;
         setSentenceSuccessCount(nextCount);
 
-        if (nextCount >= 5) {
+        const totalQuestions = sentenceQueue.length || activeTopic.words.length;
+        if (nextCount >= totalQuestions) {
           sounds.playVictory();
           setIsGameOver(true);
           void completeGame(getTopicPoints(selectedTopicId));
         } else {
-          setTimeout(() => nextSentenceQuestion(activeTopic), 700);
+          setTimeout(() => nextSentenceQuestion(activeTopic, nextCount), 700);
         }
       } else {
         sounds.playWrong();
@@ -980,7 +1041,7 @@ export default function MiniGame() {
         </div>
 
         <button
-          onClick={() => initGameByMode(currentMode, selectedTopicId, round)}
+              onClick={() => initGameByMode(currentMode, selectedTopicId)}
           className="btn-kid btn-outline"
           style={{ padding: '8px 16px', fontSize: '13px' }}
         >
@@ -1016,7 +1077,7 @@ export default function MiniGame() {
             )}
 
             <button
-              onClick={() => initGameByMode(currentMode, selectedTopicId, 1)}
+          onClick={() => initGameByMode(currentMode, selectedTopicId)}
               className="btn-kid btn-outline"
               style={{ fontSize: '15px', padding: '12px 24px' }}
             >
@@ -1127,7 +1188,13 @@ export default function MiniGame() {
           )}
 
           {/* ========== CHẾ ĐỘ ĐẾM ĐỒ VẬT TRONG ẢNH ========== */}
-          {currentMode === 'COUNT' && countQuestion && (
+          {currentMode === 'COUNT' && countGameError && (
+            <div style={{ width: '100%', maxWidth: '760px', margin: '0 auto', padding: '22px 26px', borderRadius: '18px', border: '2px solid #FCA5A5', backgroundColor: '#FEF2F2', color: '#991B1B', textAlign: 'center', fontWeight: 700, lineHeight: 1.6 }}>
+              {countGameError}
+            </div>
+          )}
+
+          {currentMode === 'COUNT' && !countGameError && countQuestion && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center' }}>
               <div style={{
                 width: '100%',
@@ -1150,7 +1217,7 @@ export default function MiniGame() {
                   Có bao nhiêu {countQuestion.object.meaning.toLowerCase()}?
                 </span>
                 <span style={{ display: 'block', marginTop: '4px', fontSize: '15px' }}>
-                  Đã đúng: {countSuccessCount}/5 câu
+                  Đã đúng: {countSuccessCount}/{countQueue.length || activeTopic.words.length} câu
                 </span>
               </div>
 
@@ -1174,7 +1241,7 @@ export default function MiniGame() {
                     key={`${countQuestion.object.id}-${index}`}
                     src={countQuestion.object.image}
                     alt={countQuestion.object.word}
-                    style={{ width: '112px', height: '88px', objectFit: 'cover', borderRadius: '14px', border: '2px solid #E0F2FE' }}
+                    style={{ width: '160px', height: '130px', objectFit: 'contain', borderRadius: '14px', border: '2px solid #E0F2FE', backgroundColor: '#F8FAFC' }}
                   />
                 ))}
               </div>
@@ -1219,7 +1286,7 @@ export default function MiniGame() {
               }}>
                 🧩 Hãy chạm vào các từ để xếp thành câu đúng nhé!<br />
                 <span style={{ fontSize: '15px' }}>Nghe tiếng Anh rồi nghe nghĩa tiếng Việt bên dưới.</span><br />
-                <span style={{ fontSize: '15px' }}>Đã đúng: {sentenceSuccessCount}/5 câu</span>
+                <span style={{ fontSize: '15px' }}>Đã đúng: {sentenceSuccessCount}/{sentenceQueue.length || activeTopic.words.length} câu</span>
               </div>
 
               <div style={{
@@ -1387,7 +1454,7 @@ export default function MiniGame() {
               }}>
                 <div style={{ fontSize: '14px', marginBottom: '4px' }}>English first / Tiếng Anh trước</div>
                 <div style={{ fontSize: '14px', marginBottom: '4px' }}>Then Vietnamese meaning / Sau đó là nghĩa tiếng Việt</div>
-                👉 Cú Bo Bo sẽ đọc từ tiếng Anh. Bé hãy lắng nghe và chọn đúng hình ảnh bên dưới nhé! (Đã đúng: {listenSuccessCount}/5)
+                👉 Cú Bo Bo sẽ đọc từ tiếng Anh. Bé hãy lắng nghe và chọn đúng hình ảnh bên dưới nhé! (Đã đúng: {listenSuccessCount}/{listenQueue.length || activeTopic.words.length})
               </div>
 
               {/* Loa phát âm */}

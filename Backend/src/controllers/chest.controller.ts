@@ -40,7 +40,7 @@ async function getChestProgress(connection: any, userId: number, ageGroup: numbe
     const interactiveIsAvailable = accountAge >= 8 || ageGroup <= accountAge;
     const interactiveFilter = interactiveIsAvailable
         ? ''
-        : 'AND l.lesson_type IN ("FLASHCARD", "VIDEO")';
+        : 'AND l.lesson_type IN ("FLASHCARD")';
 
     const [rows]: any = await connection.query(
         `SELECT

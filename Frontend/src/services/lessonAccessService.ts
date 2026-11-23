@@ -17,7 +17,7 @@ function normalizeAge(value: string | number | undefined, fallback = 3) {
   return Number.isInteger(age) && age >= 3 && age <= 8 ? age : fallback;
 }
 
-const STUDY_TYPES = new Set<Lesson['lesson_type']>(['FLASHCARD', 'VIDEO']);
+const STUDY_TYPES = new Set<Lesson['lesson_type']>(['FLASHCARD']);
 
 export const lessonAccessService = {
   async checkRestrictedLesson(lessonId: number, mode: RestrictedLessonMode): Promise<LessonAccessResult> {

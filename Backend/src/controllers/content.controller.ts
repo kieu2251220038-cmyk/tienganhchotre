@@ -40,6 +40,7 @@ export const getLessonsByTopic = async (req: Request, res: Response): Promise<vo
              WHERE l.topic_id = ?
                AND l.status = "PUBLISHED"
                AND l.approval_status = "APPROVED"
+               AND l.lesson_type <> "VIDEO"
                AND (l.lesson_type <> "GAME" OR (mg.id IS NOT NULL AND mg.is_active = 1))
              ORDER BY l.sort_order ASC`,
             [topicId]

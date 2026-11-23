@@ -23,6 +23,8 @@ const validateGamePayload = (body: Record<string, unknown>): string | null => {
     if (!GAME_TYPES.includes(body.game_type as typeof GAME_TYPES[number])) return 'Loại mini game không hợp lệ.';
     if (!Number.isInteger(Number(body.difficulty)) || Number(body.difficulty) < 1 || Number(body.difficulty) > 5) return 'Độ khó phải nằm trong khoảng từ 1 đến 5.';
     if (!Number.isInteger(Number(body.points)) || Number(body.points) < 1) return 'Điểm thưởng phải là số nguyên lớn hơn 0.';
+    const itemCount = body.item_count === undefined ? 4 : Number(body.item_count);
+    if (!Number.isInteger(itemCount) || itemCount < 2 || itemCount > 20) return 'Số từ mỗi lượt phải nằm trong khoảng từ 2 đến 20.';
     return null;
 };
 
@@ -156,12 +158,12 @@ export const createAdminMiniGame = async (req: Request, res: Response): Promise<
         return;
     }
 
-    const { topic_id, name, game_type, difficulty, points, is_active = true, sort_order = 1 } = req.body;
+    const { topic_id, name, game_type, difficulty, points, item_count = 4, is_active = true, sort_order = 1 } = req.body;
     try {
         const [result]: any = await pool.query(
-            `INSERT INTO mini_games (topic_id, name, game_type, difficulty, points, is_active, sort_order)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [Number(topic_id), name.trim(), game_type, Number(difficulty), Number(points), is_active ? 1 : 0, Number(sort_order) || 1]
+            `INSERT INTO mini_games (topic_id, name, game_type, difficulty, points, item_count, is_active, sort_order)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [Number(topic_id), name.trim(), game_type, Number(difficulty), Number(points), Number(item_count), is_active ? 1 : 0, Number(sort_order) || 1]
         );
         await syncGameLesson(pool, {
             id: result.insertId,
@@ -184,13 +186,13 @@ export const updateAdminMiniGame = async (req: Request, res: Response): Promise<
         return;
     }
 
-    const { topic_id, name, game_type, difficulty, points, is_active, sort_order = 1 } = req.body;
+    const { topic_id, name, game_type, difficulty, points, item_count = 4, is_active, sort_order = 1 } = req.body;
     try {
         const [result]: any = await pool.query(
             `UPDATE mini_games
-             SET topic_id = ?, name = ?, game_type = ?, difficulty = ?, points = ?, is_active = ?, sort_order = ?
+             SET topic_id = ?, name = ?, game_type = ?, difficulty = ?, points = ?, item_count = ?, is_active = ?, sort_order = ?
              WHERE id = ?`,
-            [Number(topic_id), name.trim(), game_type, Number(difficulty), Number(points), is_active ? 1 : 0, Number(sort_order) || 1, id]
+            [Number(topic_id), name.trim(), game_type, Number(difficulty), Number(points), Number(item_count), is_active ? 1 : 0, Number(sort_order) || 1, id]
         );
         if (result.affectedRows === 0) {
             res.status(404).json({ message: 'Không tìm thấy mini game cần cập nhật.' });

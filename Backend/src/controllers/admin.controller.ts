@@ -303,6 +303,7 @@ export const getAdminLessons = async (req: Request, res: Response): Promise<void
             LEFT JOIN topics t ON l.topic_id = t.id
             LEFT JOIN courses c ON t.course_id = c.id
             LEFT JOIN users u_rev ON l.reviewed_by = u_rev.id
+            WHERE l.lesson_type <> 'VIDEO'
             ORDER BY l.id DESC
         `);
         res.status(200).json(lessons);
@@ -315,6 +316,10 @@ export const getAdminLessons = async (req: Request, res: Response): Promise<void
 export const createAdminLesson = async (req: Request, res: Response): Promise<void> => {
     const { topic_id, title, lesson_type, difficulty = 1, sort_order = 1 } = req.body;
     try {
+        if (lesson_type === 'VIDEO') {
+            res.status(400).json({ message: 'Loại bài VIDEO đã được ngừng sử dụng.' });
+            return;
+        }
         // BẮT BUỘC: Khi Admin tạo bài học mới, bài học tự động ở trạng thái PENDING (chờ chuyên gia duyệt)
         // và DRAFT (chưa xuất bản cho trẻ em)
         const [result]: any = await pool.query(
@@ -337,6 +342,10 @@ export const updateAdminLesson = async (req: Request, res: Response): Promise<vo
     const { id } = req.params;
     const { topic_id, title, lesson_type, difficulty, sort_order } = req.body;
     try {
+        if (lesson_type === 'VIDEO') {
+            res.status(400).json({ message: 'Loại bài VIDEO đã được ngừng sử dụng.' });
+            return;
+        }
         // Khi Admin chỉnh sửa bài học, đưa bài trở lại trạng thái PENDING để chuyên gia tái thẩm định
         await pool.query(
             'UPDATE lessons SET topic_id = ?, title = ?, lesson_type = ?, difficulty = ?, sort_order = ?, status = "DRAFT", approval_status = "PENDING", reviewed_by = NULL, reviewed_at = NULL, review_notes = NULL WHERE id = ?',

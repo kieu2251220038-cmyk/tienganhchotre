@@ -10,6 +10,7 @@ export interface MiniGame {
   game_type: MiniGameType;
   difficulty: number;
   points: number;
+  item_count: number;
   is_active: boolean | number;
   sort_order: number;
   topic_name: string;

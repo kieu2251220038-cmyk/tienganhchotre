@@ -196,7 +196,7 @@ export default function MiniGameManager() {
                 <h2 style={{ fontSize: '18px', color: '#0F172A', margin: '16px 0 8px' }}>{game.name}</h2>
                 <p style={{ margin: '0 0 5px', color: '#475569', fontSize: '14px' }}>{getStageLabel(game)} · {game.topic_name}</p>
                 <p style={{ margin: '0 0 5px', color: '#475569', fontSize: '14px' }}>Loại: <strong>{type.label}</strong></p>
-                <p style={{ margin: '0 0 18px', color: '#B45309', fontSize: '14px', fontWeight: 800 }}>⭐ {game.points} điểm · Cấp độ {game.difficulty}</p>
+                 <p style={{ margin: '0 0 18px', color: '#B45309', fontSize: '14px', fontWeight: 800 }}>⭐ {game.points} điểm · Cấp độ {game.difficulty}</p>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '9px' }}>
                   <button onClick={() => openEdit(game)} style={{ padding: '10px', borderRadius: '10px', border: '1px solid #CBD5E1', background: '#FFF', color: '#0369A1', fontWeight: 800, cursor: 'pointer' }}>⚙️ Cấu hình</button>
                   <button onClick={() => toggleGame(game)} style={{ padding: '10px', borderRadius: '10px', border: 'none', background: enabled ? '#FEE2E2' : '#DCFCE7', color: enabled ? '#B91C1C' : '#166534', fontWeight: 800, cursor: 'pointer' }}>{enabled ? 'Tắt game' : 'Bật game'}</button>

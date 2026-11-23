@@ -60,8 +60,6 @@ export default function Curriculum() {
     sounds.playClick();
     if (lesson.lesson_type === 'FLASHCARD') {
       navigate(`/lessons/${lesson.topic_id}/flashcard?lessonId=${lesson.id}`);
-    } else if (lesson.lesson_type === 'VIDEO') {
-      navigate(`/lessons/${lesson.id}/video`);
     } else if (lesson.lesson_type === 'SPEAKING') {
       navigate(`/speaking?age=${lesson.target_age || lesson.age_group || ''}&topicId=${lesson.topic_id}&lessonId=${lesson.id}`);
     } else if (lesson.lesson_type === 'QUIZ') {
@@ -84,7 +82,6 @@ export default function Curriculum() {
   const typeBadges = [
     { key: 'all', label: 'Tất Cả Dạng Bài', icon: '🎯' },
     { key: 'FLASHCARD', label: 'Thẻ Từ Flashcard', icon: '🃏' },
-    { key: 'VIDEO', label: 'Video Hoạt Hình', icon: '🎬' },
     { key: 'QUIZ', label: 'Trắc Nghiệm Quiz', icon: '❓' },
     { key: 'GAME', label: 'Trò Chơi Tương Tác', icon: '🎮' },
   ];
@@ -565,7 +562,6 @@ export default function Curriculum() {
               {materials.map((lesson) => {
                 const typeInfo: Record<string, { label: string; icon: string; color: string; bg: string }> = {
                   'FLASHCARD': { label: 'Thẻ Từ Flashcard', icon: '🃏', color: '#D97706', bg: '#FEF3C7' },
-                  'VIDEO': { label: 'Video Hoạt Hình', icon: '🎬', color: '#2563EB', bg: '#EFF6FF' },
                   'QUIZ': { label: 'Trắc Nghiệm Quiz', icon: '❓', color: '#7C3AED', bg: '#F5F3FF' },
                   'GAME': { label: 'Mini Game Ghép Từ', icon: '🎮', color: '#059669', bg: '#ECFDF5' },
                 };

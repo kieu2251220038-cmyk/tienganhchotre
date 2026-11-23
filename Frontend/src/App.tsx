@@ -8,7 +8,6 @@ import Home from './pages/kids/Home';
 import Dashboard from './pages/kids/Dashboard';
 import Topics from './pages/kids/Topics';
 import Flashcard from './pages/kids/Flashcard';
-import VideoLesson from './pages/kids/VideoLesson';
 import QuizLesson from './pages/kids/QuizLesson';
 import MiniGame from './pages/kids/MiniGame';
 import SpeakingAI from './pages/kids/SpeakingAI';
@@ -57,9 +56,6 @@ function App() {
 
           {/* U04: Chi tiết từ vựng / Flashcard */}
           <Route path="lessons/:topicId/flashcard" element={<Flashcard />} />
-
-          {/* U05: Bài học video */}
-          <Route path="lessons/:lessonId/video" element={<VideoLesson />} />
 
           {/* U06: Quiz trắc nghiệm */}
           <Route path="lessons/:lessonId/quiz" element={<LessonAccessGate mode="QUIZ"><QuizLesson /></LessonAccessGate>} />

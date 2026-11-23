@@ -163,7 +163,7 @@ export default function Lessons() {
             📖 Quản Lý Bài Học (A03)
           </h1>
           <p style={{ color: '#64748B', fontSize: '15px', marginTop: '4px' }}>
-            Thiết lập danh sách bài học Flashcard, Video, Quiz và Game theo lộ trình
+            Thiết lập danh sách bài học Flashcard, Speaking, Quiz và Game theo lộ trình
           </p>
         </div>
 
@@ -211,7 +211,7 @@ export default function Lessons() {
         borderRadius: '14px',
         border: '1px solid #E2E8F0'
       }}>
-        {['ALL', 'FLASHCARD', 'VIDEO', 'SPEAKING', 'QUIZ', 'GAME'].map((t) => (
+        {['ALL', 'FLASHCARD', 'SPEAKING', 'QUIZ', 'GAME'].map((t) => (
           <button
             key={t}
             onClick={() => setTypeFilter(t)}
@@ -506,7 +506,6 @@ export default function Lessons() {
                     style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
                   >
                     <option value="FLASHCARD">🃏 FLASHCARD (Thẻ từ)</option>
-                    <option value="VIDEO">🎬 VIDEO (Video hoạt hình)</option>
                     <option value="SPEAKING">🎤 SPEAKING (Nghe và nói)</option>
                     <option value="QUIZ">🎯 QUIZ (Trắc nghiệm hình ảnh)</option>
                     <option value="GAME">🎮 GAME (Mini game ghép từ)</option>

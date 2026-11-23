@@ -75,7 +75,7 @@ export default function AdminDashboard() {
               {loading ? '...' : stats?.total_lessons || 0}
             </div>
             <div style={{ fontSize: '12px', color: '#0284C7', fontWeight: 600, marginTop: '4px' }}>
-              Flashcard, Video, Quiz, Game
+              Flashcard, Speaking, Quiz, Game
             </div>
           </div>
           <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
