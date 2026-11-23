@@ -155,6 +155,43 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
     }
 };
 
+// Cập nhật thông tin hiển thị của hồ sơ Phụ huynh / Chuyên gia / tài khoản hiện tại
+export const updateProfile = async (req: Request, res: Response): Promise<void> => {
+    try {
+        if (!req.user) {
+            res.status(401).json({ message: 'Chưa đăng nhập!' });
+            return;
+        }
+
+        const displayName = typeof req.body?.displayName === 'string'
+            ? req.body.displayName.trim()
+            : '';
+
+        if (displayName.length < 2 || displayName.length > 80) {
+            res.status(400).json({ message: 'Tên hiển thị phải có từ 2 đến 80 ký tự.' });
+            return;
+        }
+
+        await pool.query(
+            'UPDATE users SET display_name = ? WHERE id = ?',
+            [displayName, req.user.id]
+        );
+
+        const [rows]: any = await pool.query(
+            'SELECT id, username, display_name, role, age_group, created_at FROM users WHERE id = ?',
+            [req.user.id]
+        );
+
+        res.status(200).json({
+            message: 'Đã cập nhật hồ sơ thành công.',
+            user: rows[0]
+        });
+    } catch (error) {
+        console.error('Lỗi cập nhật hồ sơ:', error);
+        res.status(500).json({ message: 'Lỗi hệ thống khi cập nhật hồ sơ.' });
+    }
+};
+
 // API cấp nhanh token cho các tài khoản kiểm thử vai trò (Demo Switcher)
 export const getDemoToken = async (req: Request, res: Response): Promise<void> => {
     const { userId } = req.params;

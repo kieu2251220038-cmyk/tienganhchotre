@@ -8,6 +8,7 @@ export interface User {
   age_group?: '3' | '4' | '5' | '6' | '7' | '8' | string;
   parent_id?: number | null;
   daily_goal_minutes?: number;
+  created_at?: string;
 }
 
 export interface Course {
@@ -88,6 +89,12 @@ export interface CurriculumStandard {
   age: string;
   focus: string;
   criteria: string[];
+}
+
+export interface LessonReviewDetail {
+  lesson: Lesson;
+  vocabularies: Vocabulary[];
+  questions: Question[];
 }
 
 export interface ParentChild {

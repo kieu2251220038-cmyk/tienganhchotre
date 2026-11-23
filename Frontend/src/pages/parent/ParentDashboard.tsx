@@ -6,6 +6,7 @@ import type { ParentChild, ChildOverview, ChildActivity, ChildSkill, ChildVocabu
 import speakingSummaryService from '../../services/speakingSummaryService';
 import type { SpeakingSummary } from '../../services/speakingSummaryService';
 import { sounds } from '../../utils/soundEffects';
+import RoleProfileModal from '../../components/common/RoleProfileModal';
 
 export default function ParentDashboard() {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ export default function ParentDashboard() {
   const [newGoalMinutes, setNewGoalMinutes] = useState<number>(15);
   const [savingGoal, setSavingGoal] = useState<boolean>(false);
   const [toastMsg, setToastMsg] = useState<string>('');
+  const [profileModalOpen, setProfileModalOpen] = useState<boolean>(false);
 
   // Modal liên kết hồ sơ con có sẵn (xác minh an toàn)
   const [linkModalOpen, setLinkModalOpen] = useState<boolean>(false);
@@ -51,6 +53,11 @@ export default function ParentDashboard() {
   const showToast = (msg: string) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(''), 3500);
+  };
+
+  const handleProfileSaved = (updatedUser: any) => {
+    setParentUser(updatedUser);
+    showToast('✓ Đã cập nhật hồ sơ Phụ huynh.');
   };
 
   const loadParentData = async () => {
@@ -264,6 +271,23 @@ export default function ParentDashboard() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            type="button"
+            onClick={() => { sounds.playClick(); setProfileModalOpen(true); }}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '12px',
+              border: '1.5px solid #F9A8D4',
+              backgroundColor: '#FDF2F8',
+              color: '#BE185D',
+              fontSize: '13px',
+              fontWeight: 800,
+              cursor: 'pointer'
+            }}
+          >
+            👤 Hồ sơ Phụ huynh
+          </button>
+
           <Link
             to="/"
             style={{
@@ -1549,6 +1573,16 @@ export default function ParentDashboard() {
             </form>
           </div>
         </div>
+      )}
+
+      {profileModalOpen && (
+        <RoleProfileModal
+          user={parentUser}
+          role="PARENT"
+          linkedChildren={children.length}
+          onClose={() => setProfileModalOpen(false)}
+          onSaved={handleProfileSaved}
+        />
       )}
     </div>
   );

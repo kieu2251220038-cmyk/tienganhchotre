@@ -56,6 +56,13 @@ export const authService = {
     return res.data.user;
   },
 
+  async updateProfile(displayName: string): Promise<User> {
+    const res = await API.put<{ message: string; user: User }>('/auth/me', { displayName });
+    if (!res.data?.user) throw new Error('Không cập nhật được hồ sơ người dùng');
+    this.setCurrentUser(res.data.user);
+    return res.data.user;
+  },
+
   async register(username: string, password: string, displayName: string, ageGroup: string = '5', dailyGoalMinutes: number = 10): Promise<User> {
     try {
       const res = await API.post('/auth/register', { username, password, displayName, ageGroup, dailyGoalMinutes });

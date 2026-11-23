@@ -1,6 +1,13 @@
 import { Request, Response } from 'express';
 import pool from '../config/database';
 
+function toPublicMediaUrl(req: Request, fileUrl: string | null | undefined): string | null {
+    if (!fileUrl) return null;
+    if (/^(https?:)?\/\//i.test(fileUrl) || fileUrl.startsWith('data:')) return fileUrl;
+    const normalizedPath = fileUrl.startsWith('/') ? fileUrl : `/${fileUrl}`;
+    return `${req.protocol}://${req.get('host')}${normalizedPath}`;
+}
+
 // 1. Lấy danh sách bài học cần duyệt / lịch sử duyệt cho chuyên gia
 export const getLessonsForReview = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -115,6 +122,81 @@ export const reviewLesson = async (req: Request, res: Response): Promise<void> =
     } catch (error) {
         console.error('Lỗi khi duyệt bài học:', error);
         res.status(500).json({ message: 'Lỗi khi lưu kết quả kiểm duyệt' });
+    }
+};
+
+// Chuyên gia xem đầy đủ nội dung bài trước khi quyết định duyệt hoặc góp ý
+export const getLessonReviewDetail = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const [lessonRows]: any = await pool.query(`
+            SELECT
+                l.*,
+                t.name AS topic_name,
+                t.description AS topic_description,
+                c.title AS course_title,
+                c.age_group,
+                u_rev.display_name AS reviewer_name
+            FROM lessons l
+            JOIN topics t ON l.topic_id = t.id
+            JOIN courses c ON t.course_id = c.id
+            LEFT JOIN users u_rev ON l.reviewed_by = u_rev.id
+            WHERE l.id = ? AND l.lesson_type <> 'VIDEO'
+        `, [id]);
+
+        if (lessonRows.length === 0) {
+            res.status(404).json({ message: 'Không tìm thấy bài học cần xem.' });
+            return;
+        }
+
+        const lesson = lessonRows[0];
+        const [vocabularies]: any = await pool.query(`
+            SELECT v.*, m_img.file_url AS image_url, m_aud.file_url AS audio_url
+            FROM vocabularies v
+            LEFT JOIN media_assets m_img ON v.image_id = m_img.id
+            LEFT JOIN media_assets m_aud ON v.audio_id = m_aud.id
+            WHERE v.topic_id = ?
+            ORDER BY v.id ASC
+        `, [lesson.topic_id]);
+
+        const [questions]: any = await pool.query(`
+            SELECT q.*, m.file_url AS media_url
+            FROM questions q
+            LEFT JOIN media_assets m ON q.media_id = m.id
+            WHERE q.lesson_id = ?
+            ORDER BY q.id ASC
+        `, [id]);
+
+        for (const question of questions) {
+            const [answers]: any = await pool.query(`
+                SELECT a.*, m.file_url AS media_url, v.meaning_vi
+                FROM answers a
+                LEFT JOIN media_assets m ON a.media_id = m.id
+                LEFT JOIN vocabularies v
+                  ON LOWER(TRIM(v.word)) = LOWER(TRIM(a.answer_text))
+                 AND v.topic_id = ?
+                WHERE a.question_id = ?
+                ORDER BY a.id ASC
+            `, [lesson.topic_id, question.id]);
+            question.answers = answers.map((answer: any) => ({
+                ...answer,
+                media_url: toPublicMediaUrl(req, answer.media_url)
+            }));
+            question.media_url = toPublicMediaUrl(req, question.media_url);
+        }
+
+        res.status(200).json({
+            lesson,
+            vocabularies: vocabularies.map((vocabulary: any) => ({
+                ...vocabulary,
+                image_url: toPublicMediaUrl(req, vocabulary.image_url),
+                audio_url: toPublicMediaUrl(req, vocabulary.audio_url)
+            })),
+            questions
+        });
+    } catch (error) {
+        console.error('Lỗi khi lấy chi tiết bài học cho chuyên gia:', error);
+        res.status(500).json({ message: 'Lỗi hệ thống khi tải nội dung bài học.' });
     }
 };
 

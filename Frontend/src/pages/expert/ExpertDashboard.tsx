@@ -2,19 +2,22 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import { expertService } from '../../services/expertService';
-import type { Lesson, ExpertStats, CurriculumStandard, ApprovalStatus } from '../../types';
+import type { Lesson, LessonReviewDetail, ExpertStats, ApprovalStatus, User } from '../../types';
 import { sounds } from '../../utils/soundEffects';
+import RoleProfileModal from '../../components/common/RoleProfileModal';
 
 export default function ExpertDashboard() {
   const navigate = useNavigate();
   const [expertUser, setExpertUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'reviews' | 'standards'>('reviews');
+  const [activeTab, setActiveTab] = useState<'reviews'>('reviews');
   const [filterStatus, setFilterStatus] = useState<string>('ALL');
   const [filterAge, setFilterAge] = useState<string>('ALL');
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [stats, setStats] = useState<ExpertStats | null>(null);
-  const [standards, setStandards] = useState<CurriculumStandard[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [lessonDetail, setLessonDetail] = useState<LessonReviewDetail | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState<boolean>(false);
+  const [profileModalOpen, setProfileModalOpen] = useState<boolean>(false);
 
   // Modal phản biện / góp ý
   const [rejectModalLesson, setRejectModalLesson] = useState<Lesson | null>(null);
@@ -51,7 +54,6 @@ export default function ExpertDashboard() {
       }
       fetchStats();
       fetchLessons();
-      expertService.getStandards().then(setStandards).catch(console.error);
     };
     initExpert();
   }, [filterStatus, filterAge, navigate]);
@@ -59,6 +61,25 @@ export default function ExpertDashboard() {
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(''), 3500);
+  };
+
+  const handleProfileSaved = (updatedUser: User) => {
+    setExpertUser(updatedUser);
+    showToast('✓ Đã cập nhật hồ sơ Chuyên gia giáo dục.');
+  };
+
+  const handleOpenLessonDetail = async (lesson: Lesson) => {
+    sounds.playClick();
+    setLoadingDetail(true);
+    try {
+      const detail = await expertService.getLessonReviewDetail(lesson.id);
+      setLessonDetail(detail);
+    } catch (error: any) {
+      console.error('Lỗi tải nội dung bài học:', error);
+      showToast(error?.response?.data?.message || 'Không thể tải nội dung bài học.');
+    } finally {
+      setLoadingDetail(false);
+    }
   };
 
   // Duyệt trực tiếp (Approve)
@@ -70,6 +91,7 @@ export default function ExpertDashboard() {
         review_notes: 'Đạt chuẩn nội dung sư phạm, phát âm chuẩn và hình ảnh phù hợp lứa tuổi.'
       });
       showToast(`✓ Đã phê duyệt bài học "${lesson.title}" đạt chuẩn!`);
+      setLessonDetail(null);
       fetchLessons();
       fetchStats();
     } catch (err) {
@@ -96,6 +118,7 @@ export default function ExpertDashboard() {
       sounds.playClick();
       showToast(`Đã gửi phản biện sư phạm cho bài "${rejectModalLesson.title}"!`);
       setRejectModalLesson(null);
+      setLessonDetail(null);
       setReviewNote('');
       fetchLessons();
       fetchStats();
@@ -147,6 +170,23 @@ export default function ExpertDashboard() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button
+            type="button"
+            onClick={() => { sounds.playClick(); setProfileModalOpen(true); }}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '12px',
+              border: '1.5px solid #C4B5FD',
+              backgroundColor: '#F5F3FF',
+              color: '#6D28D9',
+              fontSize: '13px',
+              fontWeight: 800,
+              cursor: 'pointer'
+            }}
+          >
+            👤 Hồ sơ Chuyên gia
+          </button>
+
           <Link
             to="/"
             style={{
@@ -275,40 +315,6 @@ export default function ExpertDashboard() {
               📋 Danh Sách Bài Học Cần Duyệt
             </button>
 
-            <button
-              onClick={() => { sounds.playClick(); setActiveTab('standards'); }}
-              style={{
-                padding: '10px 20px',
-                borderRadius: '14px',
-                fontFamily: 'Fredoka, sans-serif',
-                fontWeight: 700,
-                fontSize: '14px',
-                cursor: 'pointer',
-                border: 'none',
-                backgroundColor: activeTab === 'standards' ? '#10B981' : '#FFFFFF',
-                color: activeTab === 'standards' ? '#FFFFFF' : '#065F46',
-                boxShadow: activeTab === 'standards' ? '0 4px 0 #059669' : '0 3px 0 #E2E8F0'
-              }}
-            >
-              📖 Khung Tiêu Chuẩn Sư Phạm 3 - 8T
-            </button>
-
-            <button
-              onClick={() => { sounds.playClick(); navigate('/curriculum'); }}
-              style={{
-                padding: '10px 18px',
-                borderRadius: '14px',
-                fontFamily: 'Fredoka, sans-serif',
-                fontWeight: 700,
-                fontSize: '14px',
-                cursor: 'pointer',
-                border: '2px solid #3B82F6',
-                backgroundColor: '#EFF6FF',
-                color: '#1D4ED8'
-              }}
-            >
-              🌐 Xem Trang Chủ Lộ Trình ➔
-            </button>
           </div>
         </div>
 
@@ -602,6 +608,24 @@ export default function ExpertDashboard() {
 
                     {/* Nút hành động của chuyên gia */}
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenLessonDetail(lesson)}
+                        style={{
+                          backgroundColor: '#EFF6FF',
+                          color: '#1D4ED8',
+                          border: '1.5px solid #93C5FD',
+                          borderRadius: '12px',
+                          padding: '10px 16px',
+                          fontFamily: 'Fredoka, sans-serif',
+                          fontWeight: 700,
+                          fontSize: '13px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {loadingDetail ? 'Đang tải...' : '👁 Xem nội dung'}
+                      </button>
+
                       {lesson.approval_status !== 'APPROVED' && (
                         <button
                           onClick={() => handleApprove(lesson)}
@@ -644,72 +668,6 @@ export default function ExpertDashboard() {
               })}
             </div>
           )}
-        </div>
-      )}
-
-      {/* ================= TAB 2: KHUNG TIÊU CHUẨN SƯ PHẠM 3 - 8 TUỔI ================= */}
-      {activeTab === 'standards' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div style={{
-            backgroundColor: '#FFFFFF',
-            borderRadius: '24px',
-            padding: '24px',
-            border: '2px solid #E2E8F0'
-          }}>
-            <h2 style={{ fontFamily: 'Fredoka, sans-serif', fontSize: '24px', fontWeight: 800, color: '#1E293B', marginBottom: '8px' }}>
-              Khung Đánh Giá & Thẩm Định Sư Phạm Tiếng Anh Mầm Non & Tiểu Học
-            </h2>
-            <p style={{ color: '#64748B', fontSize: '14px', lineHeight: 1.6 }}>
-              Dành cho chuyên gia giáo dục tham chiếu khi phê duyệt giáo án, bài học tương tác, video và trắc nghiệm cho trẻ từ 3 đến 8 tuổi.
-            </p>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '18px' }}>
-            {standards.map((std, idx) => (
-              <div
-                key={idx}
-                style={{
-                  backgroundColor: '#FFFFFF',
-                  borderRadius: '20px',
-                  padding: '22px',
-                  border: '2px solid #E2E8F0',
-                  boxShadow: '0 4px 10px rgba(0,0,0,0.02)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '12px'
-                }}
-              >
-                <div style={{
-                  backgroundColor: '#F5F3FF',
-                  color: '#6D28D9',
-                  padding: '4px 12px',
-                  borderRadius: '999px',
-                  fontFamily: 'Fredoka, sans-serif',
-                  fontWeight: 800,
-                  fontSize: '13px',
-                  display: 'inline-block',
-                  width: 'fit-content'
-                }}>
-                  ĐỘ TUỔI: {std.age}
-                </div>
-
-                <h3 style={{ fontFamily: 'Fredoka, sans-serif', fontSize: '18px', fontWeight: 800, color: '#1E293B' }}>
-                  {std.focus}
-                </h3>
-
-                <div style={{ borderTop: '1px solid #E2E8F0', paddingTop: '10px' }}>
-                  <div style={{ fontSize: '12px', fontWeight: 800, color: '#475569', marginBottom: '6px' }}>
-                    TIÊU CHÍ BẮT BUỘC KHI PHÊ DUYỆT:
-                  </div>
-                  <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '13px', color: '#334155', lineHeight: 1.6 }}>
-                    {std.criteria.map((c, cIdx) => (
-                      <li key={cIdx} style={{ marginBottom: '4px' }}>{c}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       )}
 
@@ -830,6 +788,79 @@ export default function ExpertDashboard() {
             </div>
           </div>
         </div>
+      )}
+      {lessonDetail && (
+        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.58)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 180, padding: '20px' }}>
+          <div style={{ backgroundColor: '#FFFFFF', borderRadius: '24px', width: '100%', maxWidth: '920px', maxHeight: '90vh', overflowY: 'auto', padding: '28px', boxShadow: '0 24px 50px rgba(15, 23, 42, 0.24)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', alignItems: 'flex-start' }}>
+              <div>
+                <span style={{ display: 'inline-block', backgroundColor: '#EFF6FF', color: '#1D4ED8', border: '1.5px solid #93C5FD', borderRadius: '999px', padding: '5px 12px', fontSize: '12px', fontWeight: 800 }}>👁 XEM NỘI DUNG BÀI HỌC</span>
+                <h2 style={{ fontFamily: 'Fredoka, sans-serif', fontSize: '24px', color: '#1E293B', margin: '10px 0 4px' }}>{lessonDetail.lesson.title}</h2>
+                <div style={{ color: '#64748B', fontSize: '13px' }}>
+                  {lessonDetail.lesson.course_title} · {lessonDetail.lesson.topic_name} · Trẻ {lessonDetail.lesson.target_age || lessonDetail.lesson.age_group || '3–8'} tuổi
+                </div>
+              </div>
+              <button type="button" onClick={() => setLessonDetail(null)} style={{ border: 'none', background: 'none', color: '#94A3B8', fontSize: '26px', cursor: 'pointer' }}>×</button>
+            </div>
+
+            <div style={{ backgroundColor: '#F8FAFC', borderRadius: '14px', padding: '14px', marginTop: '18px', color: '#334155', lineHeight: 1.55, fontSize: '14px' }}>
+              <strong>🎯 Mục tiêu bài học:</strong> {lessonDetail.lesson.learning_outcomes || 'Chưa có mô tả mục tiêu.'}
+            </div>
+
+            <section style={{ marginTop: '20px' }}>
+              <h3 style={{ color: '#6D28D9', fontFamily: 'Fredoka, sans-serif', margin: '0 0 10px' }}>📚 Từ vựng trong bài ({lessonDetail.vocabularies.length})</h3>
+              {lessonDetail.vocabularies.length > 0 ? (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '10px' }}>
+                  {lessonDetail.vocabularies.map((vocabulary) => (
+                    <div key={vocabulary.id} style={{ border: '1.5px solid #E2E8F0', borderRadius: '14px', padding: '10px', display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      {vocabulary.image_url ? <img src={vocabulary.image_url} alt={vocabulary.word} style={{ width: '54px', height: '54px', objectFit: 'contain', borderRadius: '10px', backgroundColor: '#F8FAFC' }} /> : <div style={{ width: '54px', height: '54px', borderRadius: '10px', backgroundColor: '#F1F5F9', display: 'grid', placeItems: 'center', fontSize: '22px' }}>🖼️</div>}
+                      <div>
+                        <div style={{ color: '#0F172A', fontWeight: 800 }}>{vocabulary.word}</div>
+                        <div style={{ color: '#475569', fontSize: '13px' }}>{vocabulary.meaning_vi}</div>
+                        <div style={{ color: '#94A3B8', fontSize: '12px' }}>{vocabulary.phonetic}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : <div style={{ color: '#64748B', fontSize: '14px' }}>Bài học chưa có từ vựng.</div>}
+            </section>
+
+            <section style={{ marginTop: '20px' }}>
+              <h3 style={{ color: '#6D28D9', fontFamily: 'Fredoka, sans-serif', margin: '0 0 10px' }}>📝 Câu hỏi và đáp án ({lessonDetail.questions.length})</h3>
+              {lessonDetail.questions.length > 0 ? lessonDetail.questions.map((question, index) => (
+                <div key={question.id} style={{ border: '1.5px solid #E2E8F0', borderRadius: '14px', padding: '14px', marginBottom: '10px' }}>
+                  <div style={{ color: '#1E293B', fontWeight: 800 }}>{index + 1}. {question.question_text}</div>
+                  {question.answers && question.answers.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
+                      {question.answers.map((answer) => (
+                        <span key={answer.id} style={{ padding: '6px 10px', borderRadius: '9px', backgroundColor: Number(answer.is_correct) === 1 ? '#DCFCE7' : '#F8FAFC', color: Number(answer.is_correct) === 1 ? '#166534' : '#475569', border: `1px solid ${Number(answer.is_correct) === 1 ? '#86EFAC' : '#E2E8F0'}`, fontSize: '13px', fontWeight: 700 }}>
+                          {answer.answer_text}{Number(answer.is_correct) === 1 ? ' ✓' : ''}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )) : <div style={{ color: '#64748B', fontSize: '14px' }}>Bài học chưa có câu hỏi trắc nghiệm.</div>}
+            </section>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '24px', flexWrap: 'wrap' }}>
+              {lessonDetail.lesson.approval_status !== 'APPROVED' && (
+                <button type="button" onClick={() => handleApprove(lessonDetail.lesson)} style={{ padding: '11px 16px', borderRadius: '12px', border: 'none', backgroundColor: '#10B981', color: '#FFFFFF', fontWeight: 800, cursor: 'pointer' }}>✓ Phê duyệt bài này</button>
+              )}
+              <button type="button" onClick={() => { handleOpenRejectModal(lessonDetail.lesson); setLessonDetail(null); }} style={{ padding: '11px 16px', borderRadius: '12px', border: '1.5px solid #FCA5A5', backgroundColor: '#FEF2F2', color: '#B91C1C', fontWeight: 800, cursor: 'pointer' }}>✍ Góp ý / Trả về</button>
+              <button type="button" onClick={() => setLessonDetail(null)} style={{ padding: '11px 16px', borderRadius: '12px', border: '1.5px solid #CBD5E1', backgroundColor: '#FFFFFF', color: '#475569', fontWeight: 800, cursor: 'pointer' }}>Đóng</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {profileModalOpen && (
+        <RoleProfileModal
+          user={expertUser}
+          role="EXPERT"
+          onClose={() => setProfileModalOpen(false)}
+          onSaved={handleProfileSaved}
+        />
       )}
     </div>
   );

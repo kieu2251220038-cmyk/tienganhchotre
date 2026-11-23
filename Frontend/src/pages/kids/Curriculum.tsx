@@ -183,7 +183,7 @@ export default function Curriculum() {
                 }}
                 title="Dành cho chuyên gia giáo dục kiểm định bài học"
               >
-                👩‍🏫 Góc Chuyên Gia Duyệt Bài
+                👩‍🏫 Hồ Sơ & Cổng Chuyên Gia
               </button>
 
               <button
@@ -201,7 +201,7 @@ export default function Curriculum() {
                 }}
                 title="Dành cho phụ huynh theo dõi tiến độ của con"
               >
-                👨‍👩‍👧 Dành Cho Phụ Huynh
+                👨‍👩‍👧 Hồ Sơ Phụ Huynh
               </button>
             </div>
           </div>
