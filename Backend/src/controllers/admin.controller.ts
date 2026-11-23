@@ -36,12 +36,22 @@ async function saveImageData(imageData: unknown): Promise<string | null> {
     return `/uploads/vocabulary/${filename}`;
 }
 
-async function createMediaAsset(word: string, fileUrl: string): Promise<number> {
-    const [mediaRes]: any = await pool.query(
+async function createMediaAsset(word: string, fileUrl: string, executor: any = pool): Promise<number> {
+    const [mediaRes]: any = await executor.query(
         'INSERT INTO media_assets (title, media_type, file_url) VALUES (?, "IMAGE", ?)',
         [`Ảnh ${word}`, fileUrl]
     );
     return mediaRes.insertId;
+}
+
+async function resolveQuizAnswerMediaId(answer: any, label: string, executor: any = pool): Promise<number | null> {
+    if (typeof answer?.image_data === 'string' && answer.image_data.trim()) {
+        const uploadedUrl = await saveImageData(answer.image_data);
+        return uploadedUrl ? createMediaAsset(label, uploadedUrl, executor) : null;
+    }
+
+    const mediaId = Number(answer?.media_id);
+    return Number.isInteger(mediaId) && mediaId > 0 ? mediaId : null;
 }
 
 // 1. Thống kê Dashboard Admin (A01)
@@ -515,7 +525,10 @@ export const getAdminQuizQuestions = async (req: Request, res: Response): Promis
                 'SELECT a.*, m.file_url as media_url FROM answers a LEFT JOIN media_assets m ON a.media_id = m.id WHERE a.question_id = ? ORDER BY a.id ASC',
                 [q.id]
             );
-            q.answers = answers;
+            q.answers = answers.map((answer: any) => ({
+                ...answer,
+                media_url: toPublicMediaUrl(req, answer.media_url)
+            }));
         }
 
         res.status(200).json(questions);
@@ -557,11 +570,24 @@ export const createAdminQuizQuestion = async (req: Request, res: Response): Prom
         const questionId = qRes.insertId;
 
         for (const ans of answers) {
+            const mediaId = await resolveQuizAnswerMediaId(
+                ans,
+                `Quiz ${question_text} - ${ans.answer_text}`
+            );
             await pool.query(
-                'INSERT INTO answers (question_id, answer_text, is_correct) VALUES (?, ?, ?)',
-                [questionId, ans.answer_text, ans.is_correct ? 1 : 0]
+                'INSERT INTO answers (question_id, answer_text, is_correct, media_id) VALUES (?, ?, ?, ?)',
+                [questionId, ans.answer_text, ans.is_correct ? 1 : 0, mediaId]
             );
         }
+
+        // Mỗi khi nội dung Quiz được tạo mới, bài Quiz phải được chuyên gia duyệt lại.
+        await pool.query(
+            `UPDATE lessons
+             SET status = "DRAFT", approval_status = "PENDING",
+                 reviewed_by = NULL, reviewed_at = NULL, review_notes = NULL
+             WHERE id = ? AND lesson_type = "QUIZ"`,
+            [lesson_id]
+        );
 
         res.status(201).json({ message: 'Tạo câu hỏi Quiz thành công!', id: questionId });
     } catch (error) {
@@ -589,7 +615,7 @@ export const updateAdminQuizQuestion = async (req: Request, res: Response): Prom
             return;
         }
 
-        const [questions]: any = await connection.query('SELECT id FROM questions WHERE id = ? LIMIT 1', [id]);
+        const [questions]: any = await connection.query('SELECT id, lesson_id FROM questions WHERE id = ? LIMIT 1', [id]);
         if (questions.length === 0) {
             await connection.rollback();
             res.status(404).json({ message: 'Không tìm thấy câu hỏi Quiz cần sửa.' });
@@ -602,9 +628,24 @@ export const updateAdminQuizQuestion = async (req: Request, res: Response): Prom
         );
         await connection.query('DELETE FROM answers WHERE question_id = ?', [id]);
         for (const answer of answers) {
+            const mediaId = await resolveQuizAnswerMediaId(
+                answer,
+                `Quiz ${question_text} - ${answer.answer_text}`,
+                connection
+            );
             await connection.query(
-                'INSERT INTO answers (question_id, answer_text, is_correct) VALUES (?, ?, ?)',
-                [id, answer.answer_text.trim(), answer.is_correct === true || Number(answer.is_correct) === 1 ? 1 : 0]
+                'INSERT INTO answers (question_id, answer_text, is_correct, media_id) VALUES (?, ?, ?, ?)',
+                [id, answer.answer_text.trim(), answer.is_correct === true || Number(answer.is_correct) === 1 ? 1 : 0, mediaId]
+            );
+        }
+        const lessonIdsToReset = new Set([Number(questions[0].lesson_id), Number(lesson_id)]);
+        for (const quizLessonId of lessonIdsToReset) {
+            await connection.query(
+                `UPDATE lessons
+                 SET status = "DRAFT", approval_status = "PENDING",
+                     reviewed_by = NULL, reviewed_at = NULL, review_notes = NULL
+                 WHERE id = ? AND lesson_type = "QUIZ"`,
+                [quizLessonId]
             );
         }
         await connection.commit();
@@ -621,8 +662,21 @@ export const updateAdminQuizQuestion = async (req: Request, res: Response): Prom
 export const deleteAdminQuizQuestion = async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     try {
+        const [questionRows]: any = await pool.query(
+            'SELECT lesson_id FROM questions WHERE id = ? LIMIT 1',
+            [id]
+        );
         await pool.query('DELETE FROM answers WHERE question_id = ?', [id]);
         await pool.query('DELETE FROM questions WHERE id = ?', [id]);
+        if (questionRows.length > 0) {
+            await pool.query(
+                `UPDATE lessons
+                 SET status = "DRAFT", approval_status = "PENDING",
+                     reviewed_by = NULL, reviewed_at = NULL, review_notes = NULL
+                 WHERE id = ? AND lesson_type = "QUIZ"`,
+                [questionRows[0].lesson_id]
+            );
+        }
         res.status(200).json({ message: 'Xóa câu hỏi thành công!' });
     } catch (error) {
         console.error('Lỗi xóa câu hỏi Quiz:', error);

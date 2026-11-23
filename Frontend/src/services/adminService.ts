@@ -81,7 +81,13 @@ export interface AdminQuizQuestion {
   question_text: string;
   points: number;
   lesson_title?: string;
-  answers?: Array<{ id: number; answer_text: string; is_correct: boolean | number; media_url?: string }>;
+  answers?: Array<{
+    id: number;
+    answer_text: string;
+    is_correct: boolean | number;
+    media_id?: number | null;
+    media_url?: string | null;
+  }>;
 }
 
 export const adminService = {
@@ -160,11 +166,11 @@ export const adminService = {
     return res.data;
   },
 
-  async createQuestion(data: { lesson_id: number; question_text: string; question_type?: string; points?: number; answers: Array<{ answer_text: string; is_correct: boolean }> }): Promise<void> {
+  async createQuestion(data: { lesson_id: number; question_text: string; question_type?: string; points?: number; answers: Array<{ answer_text: string; is_correct: boolean; media_id?: number | null; image_data?: string }> }): Promise<void> {
     await API.post('/admin/questions', data);
   },
 
-  async updateQuestion(id: number, data: { lesson_id: number; question_text: string; question_type?: string; points?: number; answers: Array<{ answer_text: string; is_correct: boolean }> }): Promise<void> {
+  async updateQuestion(id: number, data: { lesson_id: number; question_text: string; question_type?: string; points?: number; answers: Array<{ answer_text: string; is_correct: boolean; media_id?: number | null; image_data?: string }> }): Promise<void> {
     await API.put(`/admin/questions/${id}`, data);
   },
 

@@ -21,7 +21,7 @@ const validateGamePayload = (body: Record<string, unknown>): string | null => {
     if (!Number.isInteger(Number(body.topic_id)) || Number(body.topic_id) <= 0) return 'Vui lòng chọn chủ đề cho mini game.';
     if (typeof body.name !== 'string' || !body.name.trim()) return 'Tên mini game không được để trống.';
     if (!GAME_TYPES.includes(body.game_type as typeof GAME_TYPES[number])) return 'Loại mini game không hợp lệ.';
-    if (!Number.isInteger(Number(body.difficulty)) || Number(body.difficulty) < 1 || Number(body.difficulty) > 5) return 'Độ khó phải nằm trong khoảng từ 1 đến 5.';
+    if (!Number.isInteger(Number(body.difficulty)) || Number(body.difficulty) < 1) return 'Độ khó phải là số nguyên dương.';
     if (!Number.isInteger(Number(body.points)) || Number(body.points) < 1) return 'Điểm thưởng phải là số nguyên lớn hơn 0.';
     const itemCount = body.item_count === undefined ? 4 : Number(body.item_count);
     if (!Number.isInteger(itemCount) || itemCount < 2 || itemCount > 20) return 'Số từ mỗi lượt phải nằm trong khoảng từ 2 đến 20.';

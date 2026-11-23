@@ -507,6 +507,7 @@ export default function Lessons() {
                   >
                     <option value="FLASHCARD">🃏 FLASHCARD (Thẻ từ)</option>
                     <option value="SPEAKING">🎤 SPEAKING (Nghe và nói)</option>
+                    <option value="QUIZ">🎯 QUIZ (Trắc nghiệm hình ảnh)</option>
                   </select>
                 </div>
               </div>

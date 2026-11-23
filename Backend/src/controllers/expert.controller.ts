@@ -86,11 +86,21 @@ export const reviewLesson = async (req: Request, res: Response): Promise<void> =
         }
 
         const [lessonRows]: any = await pool.query(
-            'SELECT id FROM lessons WHERE id = ?',
+            `SELECT id, lesson_type,
+                    (SELECT COUNT(*) FROM questions q WHERE q.lesson_id = lessons.id) AS question_count
+             FROM lessons
+             WHERE id = ?`,
             [id]
         );
         if (lessonRows.length === 0) {
             res.status(404).json({ message: 'Không tìm thấy bài học cần kiểm duyệt.' });
+            return;
+        }
+
+        if (approval_status === 'APPROVED'
+            && lessonRows[0].lesson_type === 'QUIZ'
+            && Number(lessonRows[0].question_count) < 1) {
+            res.status(400).json({ message: 'Quiz chưa có câu hỏi. Hãy tạo câu hỏi trong Quản lý Quiz trước khi duyệt.' });
             return;
         }
 
@@ -150,6 +160,16 @@ export const getLessonReviewDetail = async (req: Request, res: Response): Promis
         }
 
         const lesson = lessonRows[0];
+        let miniGame = null;
+        if (lesson.mini_game_id) {
+            const [miniGameRows]: any = await pool.query(`
+                SELECT id, name, game_type, difficulty, points, item_count, is_active, sort_order
+                FROM mini_games
+                WHERE id = ?
+            `, [lesson.mini_game_id]);
+            miniGame = miniGameRows[0] || null;
+        }
+
         const [vocabularies]: any = await pool.query(`
             SELECT v.*, m_img.file_url AS image_url, m_aud.file_url AS audio_url
             FROM vocabularies v
@@ -192,7 +212,8 @@ export const getLessonReviewDetail = async (req: Request, res: Response): Promis
                 image_url: toPublicMediaUrl(req, vocabulary.image_url),
                 audio_url: toPublicMediaUrl(req, vocabulary.audio_url)
             })),
-            questions
+            questions,
+            mini_game: miniGame
         });
     } catch (error) {
         console.error('Lỗi khi lấy chi tiết bài học cho chuyên gia:', error);

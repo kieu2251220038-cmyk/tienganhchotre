@@ -232,8 +232,8 @@ export default function MiniGameManager() {
                   {GAME_TYPES.map((type) => <option key={type.value} value={type.value}>{type.icon} {type.label}</option>)}
                 </select>
               </label>
-              <label style={{ fontWeight: 700 }}>Độ khó (1–5)
-                <input type="number" min={1} max={5} value={form.difficulty} onChange={(event) => setForm({ ...form, difficulty: Number(event.target.value) })} style={{ display: 'block', marginTop: '6px', width: '100%', boxSizing: 'border-box', padding: '11px', borderRadius: '10px', border: '1px solid #CBD5E1' }} />
+              <label style={{ fontWeight: 700 }}>Độ khó
+                <input type="number" min={1} value={form.difficulty} onChange={(event) => setForm({ ...form, difficulty: Number(event.target.value) })} style={{ display: 'block', marginTop: '6px', width: '100%', boxSizing: 'border-box', padding: '11px', borderRadius: '10px', border: '1px solid #CBD5E1' }} />
               </label>
               <label style={{ fontWeight: 700 }}>Điểm thưởng
                 <input type="number" min={1} value={form.points} onChange={(event) => setForm({ ...form, points: Number(event.target.value) })} style={{ display: 'block', marginTop: '6px', width: '100%', boxSizing: 'border-box', padding: '11px', borderRadius: '10px', border: '1px solid #CBD5E1' }} />

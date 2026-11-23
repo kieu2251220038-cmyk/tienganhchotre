@@ -97,6 +97,7 @@ export const getCurriculumRoadmap = async (req: Request, res: Response): Promise
                        AND l.approval_status = "APPROVED"
                         AND l.lesson_type <> "VIDEO"
                        AND (l.lesson_type <> "GAME" OR (mg.id IS NOT NULL AND mg.is_active = 1))
+                       AND (l.lesson_type <> "QUIZ" OR EXISTS (SELECT 1 FROM questions q_ready WHERE q_ready.lesson_id = l.id))
                      ORDER BY l.sort_order ASC`,
                     [topic.id]
                 );
@@ -159,6 +160,7 @@ export const searchMaterials = async (req: Request, res: Response): Promise<void
             WHERE l.status = 'PUBLISHED'
               AND l.approval_status = 'APPROVED'
               AND l.lesson_type <> 'VIDEO'
+              AND (l.lesson_type <> 'QUIZ' OR EXISTS (SELECT 1 FROM questions q_ready WHERE q_ready.lesson_id = l.id))
         `;
 
         const params: any[] = [];
@@ -226,6 +228,7 @@ export const getLessonPedagogyDetail = async (req: Request, res: Response): Prom
             WHERE l.id = ?
               AND l.status = 'PUBLISHED'
               AND l.approval_status = 'APPROVED'
+              AND (l.lesson_type <> 'QUIZ' OR EXISTS (SELECT 1 FROM questions q_ready WHERE q_ready.lesson_id = l.id))
         `, [lessonId]);
 
         if (rows.length === 0) {

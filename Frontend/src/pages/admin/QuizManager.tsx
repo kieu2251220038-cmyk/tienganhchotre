@@ -9,6 +9,21 @@ const getStageLabel = (lesson: AdminLesson) => {
   return `Bậc ${lesson.age_group || '?'} tuổi`;
 };
 
+type QuizAnswerForm = {
+  answer_text: string;
+  is_correct: boolean;
+  media_id?: number | null;
+  image_url?: string;
+  image_data?: string;
+};
+
+const createEmptyAnswers = (): QuizAnswerForm[] => [
+  { answer_text: '', is_correct: true },
+  { answer_text: '', is_correct: false },
+  { answer_text: '', is_correct: false },
+  { answer_text: '', is_correct: false }
+];
+
 export default function QuizManager() {
   const [questions, setQuestions] = useState<AdminQuizQuestion[]>([]);
   const [lessonsList, setLessonsList] = useState<AdminLesson[]>([]);
@@ -20,22 +35,17 @@ export default function QuizManager() {
   const [lessonId, setLessonId] = useState(3);
   const [questionText, setQuestionText] = useState('');
   const [points, setPoints] = useState(10);
-  const [answers, setAnswers] = useState([
-    { answer_text: '', is_correct: true },
-    { answer_text: '', is_correct: false },
-    { answer_text: '', is_correct: false },
-    { answer_text: '', is_correct: false },
-  ]);
+  const [answers, setAnswers] = useState<QuizAnswerForm[]>(createEmptyAnswers());
 
-  const createEmptyAnswers = () => [
-    { answer_text: '', is_correct: true },
-    { answer_text: '', is_correct: false },
-    { answer_text: '', is_correct: false },
-    { answer_text: '', is_correct: false }
-  ];
+  const quizLessons = lessonsList.filter((lesson) => lesson.lesson_type === 'QUIZ');
 
   const openCreateModal = () => {
+    if (quizLessons.length === 0) {
+      setMessage('⚠️ Chưa có bài học Quiz. Hãy tạo bài học QUIZ trong Quản lý Bài Học trước.');
+      return;
+    }
     setEditingQuestionId(null);
+    setLessonId(quizLessons[0].id);
     setQuestionText('');
     setPoints(10);
     setAnswers(createEmptyAnswers());
@@ -50,7 +60,9 @@ export default function QuizManager() {
     setPoints(question.points);
     setAnswers(Array.from({ length: 4 }, (_, index) => ({
       answer_text: existingAnswers[index]?.answer_text || '',
-      is_correct: Boolean(existingAnswers[index]?.is_correct === true || Number(existingAnswers[index]?.is_correct) === 1)
+      is_correct: Boolean(existingAnswers[index]?.is_correct === true || Number(existingAnswers[index]?.is_correct) === 1),
+      media_id: existingAnswers[index]?.media_id || null,
+      image_url: existingAnswers[index]?.media_url || ''
     })));
     setShowModal(true);
   };
@@ -89,6 +101,30 @@ export default function QuizManager() {
     }
   };
 
+  const handleAnswerImageChange = (index: number, file?: File) => {
+    if (!file) return;
+    if (!file.type.match(/^image\/(png|jpe?g|webp|gif)$/i)) {
+      setMessage('⚠️ Vui lòng chọn ảnh PNG, JPG, WEBP hoặc GIF.');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setMessage('⚠️ Ảnh không được vượt quá 5MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== 'string') return;
+      setAnswers((previous) => previous.map((answer, answerIndex) => (
+        answerIndex === index
+          ? { ...answer, image_data: reader.result as string, image_url: '' }
+          : answer
+      )));
+      setMessage('');
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSelectCorrect = (index: number) => {
     const updated = answers.map((ans, i) => ({
       ...ans,
@@ -117,7 +153,12 @@ export default function QuizManager() {
         lesson_id: lessonId,
         question_text: questionText,
         points: Number(points),
-        answers
+        answers: answers.map(({ answer_text, is_correct, media_id, image_data }) => ({
+          answer_text,
+          is_correct,
+          media_id,
+          image_data
+        }))
       };
       if (editingQuestionId) {
         await adminService.updateQuestion(editingQuestionId, payload);
@@ -163,15 +204,16 @@ export default function QuizManager() {
 
         <button
           onClick={openCreateModal}
+          disabled={quizLessons.length === 0}
           style={{
-            backgroundColor: '#0284C7',
+            backgroundColor: quizLessons.length === 0 ? '#94A3B8' : '#0284C7',
             color: '#FFFFFF',
             border: 'none',
             borderRadius: '12px',
             padding: '12px 20px',
             fontWeight: 700,
             fontSize: '14px',
-            cursor: 'pointer',
+            cursor: quizLessons.length === 0 ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
@@ -351,10 +393,10 @@ export default function QuizManager() {
                     onChange={(e) => setLessonId(Number(e.target.value))}
                     style={{ width: '100%', padding: '12px', borderRadius: '10px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
                   >
-                    {lessonsList.filter((lesson) => lesson.lesson_type === 'QUIZ').length === 0 ? (
-                      <option value={3}>Đang tải danh sách bài học...</option>
+                    {quizLessons.length === 0 ? (
+                      <option value={0}>Chưa có bài học QUIZ để gắn câu hỏi</option>
                     ) : (
-                      lessonsList.filter((lesson) => lesson.lesson_type === 'QUIZ').map((l) => (
+                      quizLessons.map((l) => (
                         <option key={l.id} value={l.id}>
                           {getStageLabel(l)} · {l.course_title ? `[${l.course_title}] ` : ''}
                           {l.topic_name ? `${l.topic_name} ➔ ` : ''}
@@ -387,7 +429,7 @@ export default function QuizManager() {
                 </label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {answers.map((ans, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                       <input
                         type="radio"
                         name="correct_ans"
@@ -404,6 +446,22 @@ export default function QuizManager() {
                         onChange={(e) => handleAnswerChange(idx, e.target.value)}
                         style={{ flex: 1, padding: '10px 14px', borderRadius: '8px', border: '1px solid #CBD5E1' }}
                       />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 700 }}>Ảnh:</span>
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp,image/gif"
+                          onChange={(e) => handleAnswerImageChange(idx, e.target.files?.[0])}
+                          style={{ maxWidth: '150px', fontSize: '11px' }}
+                        />
+                        {(ans.image_data || ans.image_url) && (
+                          <img
+                            src={ans.image_data || ans.image_url}
+                            alt={`Ảnh ${idx + 1}`}
+                            style={{ width: '42px', height: '42px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #CBD5E1' }}
+                          />
+                        )}
+                      </div>
                       {ans.is_correct && (
                         <span style={{ fontSize: '12px', color: '#16A34A', fontWeight: 700 }}>
                           Đáp án đúng

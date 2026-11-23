@@ -42,6 +42,7 @@ export const getLessonsByTopic = async (req: Request, res: Response): Promise<vo
                AND l.approval_status = "APPROVED"
                AND l.lesson_type <> "VIDEO"
                AND (l.lesson_type <> "GAME" OR (mg.id IS NOT NULL AND mg.is_active = 1))
+               AND (l.lesson_type <> "QUIZ" OR EXISTS (SELECT 1 FROM questions q_ready WHERE q_ready.lesson_id = l.id))
              ORDER BY l.sort_order ASC`,
             [topicId]
         );
@@ -129,7 +130,8 @@ export const getLessonById = async (req: Request, res: Response): Promise<void> 
              LEFT JOIN users u_rev ON l.reviewed_by = u_rev.id
              WHERE l.id = ?
                AND l.status = "PUBLISHED"
-               AND l.approval_status = "APPROVED"`,
+               AND l.approval_status = "APPROVED"
+               AND (l.lesson_type <> "QUIZ" OR EXISTS (SELECT 1 FROM questions q_ready WHERE q_ready.lesson_id = l.id))`,
             [lessonId]
         );
         if (lessons.length === 0) {
@@ -163,7 +165,10 @@ export const getLessonById = async (req: Request, res: Response): Promise<void> 
                  WHERE a.question_id = ?`,
                 [lesson.topic_id, q.id]
             );
-            q.answers = answers;
+            q.answers = answers.map((answer: any) => ({
+                ...answer,
+                media_url: toPublicMediaUrl(req, answer.media_url)
+            }));
         }
 
         res.status(200).json({

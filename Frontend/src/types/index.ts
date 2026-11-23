@@ -95,6 +95,16 @@ export interface LessonReviewDetail {
   lesson: Lesson;
   vocabularies: Vocabulary[];
   questions: Question[];
+  mini_game?: {
+    id: number;
+    name: string;
+    game_type: string;
+    difficulty: number;
+    points: number;
+    item_count: number;
+    is_active: boolean | number;
+    sort_order: number;
+  } | null;
 }
 
 export interface ParentChild {

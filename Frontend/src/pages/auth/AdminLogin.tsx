@@ -128,17 +128,6 @@ export default function AdminLogin() {
             />
           </div>
 
-          <div style={{
-            backgroundColor: 'rgba(2, 132, 199, 0.1)',
-            border: '1px dashed #0284C7',
-            borderRadius: '10px',
-            padding: '10px 12px',
-            fontSize: '12px',
-            color: '#38BDF8'
-          }}>
-            💡 Tài khoản mẫu: <code>admin</code> / mật khẩu: <code>123456</code> (hoặc <code>admin123</code>)
-          </div>
-
           <button
             type="submit"
             disabled={loading}
@@ -184,6 +173,7 @@ export default function AdminLogin() {
             ← Quay về Cổng Học Sinh
           </button>
 
+          {false && (
           <div style={{ display: 'flex', gap: '14px', fontSize: '12.5px' }}>
             <button
               onClick={() => navigate('/parent/login')}
@@ -199,6 +189,7 @@ export default function AdminLogin() {
               👩‍🏫 Cổng Chuyên Gia / Admin
             </button>
           </div>
+          )}
         </div>
       </div>
     </div>

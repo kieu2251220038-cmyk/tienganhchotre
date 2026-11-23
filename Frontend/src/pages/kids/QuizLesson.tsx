@@ -25,10 +25,30 @@ const shuffleQuestionAnswers = (question: Question): Question => ({
   answers: shuffleAnswers(question.answers)
 });
 
+const getBilingualQuestionText = (questionText: string): { english: string; vietnamese: string } => {
+  const text = questionText.trim();
+  const separatorIndex = text.search(/[:：]/);
+  if (separatorIndex >= 0) {
+    return {
+      english: text.slice(0, separatorIndex).trim(),
+      vietnamese: text.slice(separatorIndex + 1).trim()
+    };
+  }
+
+  const slashParts = text.split(/\s*[\/]\s*/);
+  if (slashParts.length >= 2) {
+    return { english: slashParts[0].trim(), vietnamese: slashParts.slice(1).join(' / ').trim() };
+  }
+
+  return { english: text, vietnamese: 'Bé hãy chọn đáp án đúng nhé.' };
+};
+
 export default function QuizLesson() {
   const { lessonId = '3' } = useParams<{ lessonId: string }>();
   const navigate = useNavigate();
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [quizLoading, setQuizLoading] = useState(true);
+  const [quizLoadError, setQuizLoadError] = useState('');
   const [originalQuestions, setOriginalQuestions] = useState<Question[]>([]);
   const [retryQuestionIds, setRetryQuestionIds] = useState<Record<number, boolean>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -42,14 +62,24 @@ export default function QuizLesson() {
   const [celebrationKey, setCelebrationKey] = useState(0);
 
   useEffect(() => {
-    courseService.getLessonDetail(Number(lessonId)).then((res) => {
-      if (res.questions && res.questions.length > 0) {
-        setQuestions(res.questions.map(shuffleQuestionAnswers));
-        setOriginalQuestions(res.questions);
-        setCurrentIndex(0);
-        setRetryQuestionIds({});
-      }
-    });
+    setQuizLoading(true);
+    setQuizLoadError('');
+    setQuestions([]);
+    courseService.getLessonDetail(Number(lessonId))
+      .then((res) => {
+        if (res.questions && res.questions.length > 0) {
+          setQuestions(res.questions.map(shuffleQuestionAnswers));
+          setOriginalQuestions(res.questions);
+          setCurrentIndex(0);
+          setRetryQuestionIds({});
+          return;
+        }
+        setQuizLoadError('Bài Quiz này chưa có câu hỏi được tạo và duyệt.');
+      })
+      .catch(() => {
+        setQuizLoadError('Bài Quiz chưa được chuyên gia duyệt hoặc chưa có nội dung.');
+      })
+      .finally(() => setQuizLoading(false));
   }, [lessonId]);
 
   const currentQ = questions[currentIndex] || {
@@ -65,10 +95,8 @@ export default function QuizLesson() {
 
   const handlePronounceQuestion = () => {
     sounds.playClick();
-    void speakBilingual(
-      currentQ.question_text.replace(/[^\w\s]/gi, ''),
-      'Bé hãy chọn đáp án đúng nhé.'
-    );
+    const bilingualQuestion = getBilingualQuestionText(currentQ.question_text);
+    void speakBilingual(bilingualQuestion.english, bilingualQuestion.vietnamese);
   };
 
   const handleSelectAnswer = (ans: Answer) => {
@@ -126,6 +154,25 @@ export default function QuizLesson() {
     setScore(0);
     setIsFinished(false);
   };
+
+  if (quizLoading || quizLoadError || questions.length === 0) {
+    return (
+      <div style={{ maxWidth: '860px', margin: '0 auto' }}>
+        <div className="card-kid" style={{ textAlign: 'center', padding: '56px 24px' }}>
+          <div style={{ fontSize: '64px', marginBottom: '16px' }}>{quizLoading ? '⏳' : '🎯'}</div>
+          <h2 style={{ color: '#1E293B', marginBottom: '12px' }}>
+            {quizLoading ? 'Đang tải Quiz...' : 'Quiz chưa có nội dung'}
+          </h2>
+          <p style={{ color: '#64748B', fontSize: '16px', marginBottom: '24px' }}>
+            {quizLoadError || 'Bài Quiz này chưa có câu hỏi được chuyên gia duyệt.'}
+          </p>
+          <button onClick={() => navigate('/dashboard')} className="btn-kid btn-primary" style={{ padding: '12px 24px' }}>
+            ← Về lộ trình học
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: '860px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '26px' }}>

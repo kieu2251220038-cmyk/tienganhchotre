@@ -808,6 +808,48 @@ export default function ExpertDashboard() {
             </div>
 
             <section style={{ marginTop: '20px' }}>
+              <h3 style={{ color: '#6D28D9', fontFamily: 'Fredoka, sans-serif', margin: '0 0 10px' }}>📋 Nội dung triển khai</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+                <div style={{ border: '1.5px solid #E2E8F0', borderRadius: '12px', padding: '10px', backgroundColor: '#F8FAFC' }}>
+                  <div style={{ color: '#64748B', fontSize: '12px', fontWeight: 700 }}>Loại bài</div>
+                  <div style={{ color: '#0F172A', fontWeight: 800 }}>{lessonDetail.lesson.lesson_type}</div>
+                </div>
+                <div style={{ border: '1.5px solid #E2E8F0', borderRadius: '12px', padding: '10px', backgroundColor: '#F8FAFC' }}>
+                  <div style={{ color: '#64748B', fontSize: '12px', fontWeight: 700 }}>Độ khó</div>
+                  <div style={{ color: '#0F172A', fontWeight: 800 }}>Cấp độ {lessonDetail.lesson.difficulty}</div>
+                </div>
+                <div style={{ border: '1.5px solid #E2E8F0', borderRadius: '12px', padding: '10px', backgroundColor: '#F8FAFC' }}>
+                  <div style={{ color: '#64748B', fontSize: '12px', fontWeight: 700 }}>Tổng nội dung</div>
+                  <div style={{ color: '#0F172A', fontWeight: 800 }}>{lessonDetail.vocabularies.length} từ · {lessonDetail.questions.length} câu hỏi</div>
+                </div>
+              </div>
+
+              {lessonDetail.lesson.sample_materials_url && (
+                <a href={lessonDetail.lesson.sample_materials_url} target="_blank" rel="noreferrer" style={{ display: 'inline-block', marginTop: '10px', color: '#2563EB', fontWeight: 700 }}>
+                  🔗 Mở tài liệu mẫu của bài học
+                </a>
+              )}
+
+              {lessonDetail.lesson.lesson_type === 'GAME' && (
+                <div style={{ marginTop: '12px', padding: '14px', borderRadius: '14px', backgroundColor: '#ECFDF5', border: '1.5px solid #A7F3D0' }}>
+                  {lessonDetail.mini_game ? (
+                    <>
+                      <div style={{ color: '#065F46', fontWeight: 800, marginBottom: '8px' }}>🎮 {lessonDetail.mini_game.name}</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '8px', color: '#047857', fontSize: '13px' }}>
+                        <span>Loại: <strong>{lessonDetail.mini_game.game_type}</strong></span>
+                        <span>Độ khó: <strong>{lessonDetail.mini_game.difficulty}</strong></span>
+                        <span>Điểm: <strong>{lessonDetail.mini_game.points}</strong></span>
+                        <span>Số từ/lượt: <strong>{lessonDetail.mini_game.item_count}</strong></span>
+                      </div>
+                    </>
+                  ) : (
+                    <div style={{ color: '#92400E', fontWeight: 700 }}>⚠️ Bài Game chưa liên kết cấu hình Mini Game.</div>
+                  )}
+                </div>
+              )}
+            </section>
+
+            <section style={{ marginTop: '20px' }}>
               <h3 style={{ color: '#6D28D9', fontFamily: 'Fredoka, sans-serif', margin: '0 0 10px' }}>📚 Từ vựng trong bài ({lessonDetail.vocabularies.length})</h3>
               {lessonDetail.vocabularies.length > 0 ? (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '10px' }}>
@@ -830,12 +872,14 @@ export default function ExpertDashboard() {
               {lessonDetail.questions.length > 0 ? lessonDetail.questions.map((question, index) => (
                 <div key={question.id} style={{ border: '1.5px solid #E2E8F0', borderRadius: '14px', padding: '14px', marginBottom: '10px' }}>
                   <div style={{ color: '#1E293B', fontWeight: 800 }}>{index + 1}. {question.question_text}</div>
+                  {question.media_url && <img src={question.media_url} alt="Minh họa câu hỏi" style={{ width: '120px', height: '80px', objectFit: 'cover', borderRadius: '10px', marginTop: '10px' }} />}
                   {question.answers && question.answers.length > 0 && (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
                       {question.answers.map((answer) => (
-                        <span key={answer.id} style={{ padding: '6px 10px', borderRadius: '9px', backgroundColor: Number(answer.is_correct) === 1 ? '#DCFCE7' : '#F8FAFC', color: Number(answer.is_correct) === 1 ? '#166534' : '#475569', border: `1px solid ${Number(answer.is_correct) === 1 ? '#86EFAC' : '#E2E8F0'}`, fontSize: '13px', fontWeight: 700 }}>
-                          {answer.answer_text}{Number(answer.is_correct) === 1 ? ' ✓' : ''}
-                        </span>
+                        <div key={answer.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '7px', padding: '6px 10px', borderRadius: '9px', backgroundColor: Number(answer.is_correct) === 1 ? '#DCFCE7' : '#F8FAFC', color: Number(answer.is_correct) === 1 ? '#166534' : '#475569', border: `1px solid ${Number(answer.is_correct) === 1 ? '#86EFAC' : '#E2E8F0'}`, fontSize: '13px', fontWeight: 700 }}>
+                          {answer.media_url && <img src={answer.media_url} alt={answer.answer_text} style={{ width: '42px', height: '42px', objectFit: 'cover', borderRadius: '7px' }} />}
+                          <span>{answer.answer_text}{Number(answer.is_correct) === 1 ? ' ✓' : ''}</span>
+                        </div>
                       ))}
                     </div>
                   )}
