@@ -29,30 +29,31 @@ const emptyForm = (topicId = 0): GameForm => ({
 
 const isActive = (game: MiniGame) => game.is_active === true || Number(game.is_active) === 1;
 
-const getStageLabel = (item: { age_group?: string; topic_sort_order?: number }) => {
+const getStageLabel = (item: { age_group?: string; topic_sort_order?: number; sort_order?: number }) => {
+  const stageOrder = item.topic_sort_order ?? item.sort_order ?? 1;
   if (String(item.age_group) === '3') {
     const ranges = ['A-J', 'K-T', 'U-Z'];
-    return `Chặng ${item.topic_sort_order || 1}: ${ranges[(item.topic_sort_order || 1) - 1] || 'chữ cái'}`;
+    return `Chặng ${stageOrder}: ${ranges[stageOrder - 1] || 'chữ cái'}`;
   }
   if (String(item.age_group) === '4') {
     const stages = ['Numbers - Số đếm', 'Shapes - Hình dạng'];
-    return `Chặng ${item.topic_sort_order || 1}: ${stages[(item.topic_sort_order || 1) - 1] || 'số và hình'}`;
+    return `Chặng ${stageOrder}: ${stages[stageOrder - 1] || 'số và hình'}`;
   }
   if (String(item.age_group) === '5') {
     const stages = ['My Family - Gia đình', 'My Body - Cơ thể', 'Feelings - Cảm xúc'];
-    return `Chặng ${item.topic_sort_order || 1}: ${stages[(item.topic_sort_order || 1) - 1] || 'bản thân và cảm xúc'}`;
+    return `Chặng ${stageOrder}: ${stages[stageOrder - 1] || 'bản thân và cảm xúc'}`;
   }
   if (String(item.age_group) === '6') {
     const stages = ['Greetings - Chào hỏi', 'About Me - Giới thiệu', 'School Things - Đồ dùng', 'Simple Questions - Hỏi đáp'];
-    return `Chặng ${item.topic_sort_order || 1}: ${stages[(item.topic_sort_order || 1) - 1] || 'giao tiếp cơ bản'}`;
+    return `Chặng ${stageOrder}: ${stages[stageOrder - 1] || 'giao tiếp cơ bản'}`;
   }
   if (String(item.age_group) === '7') {
     const stages = ['Daily Routine - Hoạt động hằng ngày', 'Weather - Thời tiết', 'Food & Drinks - Đồ ăn'];
-    return `Chặng ${item.topic_sort_order || 1}: ${stages[(item.topic_sort_order || 1) - 1] || 'đọc và giao tiếp'}`;
+    return `Chặng ${stageOrder}: ${stages[stageOrder - 1] || 'đọc và giao tiếp'}`;
   }
   if (String(item.age_group) === '8') {
     const stages = ['Jobs - Nghề nghiệp', 'Nature - Thiên nhiên'];
-    return `Chặng ${item.topic_sort_order || 1}: ${stages[(item.topic_sort_order || 1) - 1] || 'đọc hiểu và mô tả'}`;
+    return `Chặng ${stageOrder}: ${stages[stageOrder - 1] || 'đọc hiểu và mô tả'}`;
   }
   return `Bậc ${item.age_group || '?'} tuổi`;
 };
@@ -149,7 +150,7 @@ export default function MiniGameManager() {
   };
 
   const activeCount = games.filter(isActive).length;
-  const selectableTopics = topics.filter((topic) => topic.status === 'PUBLISHED' || String(topic.age_group) !== '3');
+  const selectableTopics = topics;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>

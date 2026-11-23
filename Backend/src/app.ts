@@ -13,6 +13,7 @@ import miniGameRoutes from './routes/miniGame.routes';
 import localWhisperRoutes from './routes/localWhisper.routes';
 import openaiWhisperRoutes from './routes/openaiWhisper.routes';
 import userDataRoutes from './routes/userData.routes';
+import placementRoutes from './routes/placement.routes';
 const app: Application = express();
 
 app.use(cors());
@@ -34,6 +35,7 @@ app.use('/api/games', miniGameRoutes); // Mini game đang bật cho giao diện 
 app.use('/api/voice', localWhisperRoutes);
 app.use('/api/openai-voice', openaiWhisperRoutes);
 app.use('/api/user-data', userDataRoutes);
+app.use('/api/placement', placementRoutes);
 
 app.get('/', (req, res) => {
     res.send('Kids English API is running!');

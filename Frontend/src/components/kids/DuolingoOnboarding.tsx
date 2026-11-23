@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { sounds, speakEnglish } from '../../utils/soundEffects';
+import { cancelSpeech, scheduleBilingual, sounds, speakBilingual } from '../../utils/soundEffects';
 import { authService } from '../../services/authService';
 import { userDataService } from '../../services/userDataService';
+import { placementService } from '../../services/placementService';
+import { getVocabularyDisplayImage } from '../../utils/vocabularyVisuals';
 
 // ================= TYPES & INTERFACES =================
 export interface LearningGoal {
@@ -80,62 +82,14 @@ const DAILY_GOALS: DailyGoalOption[] = [
 ];
 
 // 4 Câu hỏi bài mồi sinh động
-const PLACEMENT_QUESTIONS: PlacementQuestion[] = [
-  {
-    id: 1,
-    promptVi: 'Quả táo này có màu gì nào bé ơi?',
-    promptEn: 'What color is this apple? 🍎',
-    speakText: 'What color is this apple? Red!',
-    image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=600&auto=format&fit=crop',
-    options: [
-      { text: 'Red', subText: 'Màu đỏ', emoji: '🍎', isCorrect: true },
-      { text: 'Blue', subText: 'Màu xanh dương', emoji: '🫐', isCorrect: false },
-      { text: 'Yellow', subText: 'Màu vàng', emoji: '🍋', isCorrect: false }
-    ]
-  },
-  {
-    id: 2,
-    promptVi: 'Con vật nào kêu "Meow... meow" đáng yêu nhỉ?',
-    promptEn: 'Which animal says "Meow meow"? 🐱',
-    speakText: 'Which animal says meow? It is a cat!',
-    image: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=600&auto=format&fit=crop',
-    options: [
-      { text: 'Dog', subText: 'Chú cún con', emoji: '🐶', isCorrect: false },
-      { text: 'Cat', subText: 'Chú mèo con', emoji: '🐱', isCorrect: true },
-      { text: 'Duck', subText: 'Chú vịt con', emoji: '🦆', isCorrect: false }
-    ]
-  },
-  {
-    id: 3,
-    promptVi: 'Bé đếm xem có bao nhiêu ngôi sao tỏa sáng?',
-    promptEn: 'How many stars are there? ⭐⭐⭐',
-    speakText: 'How many stars are there? One, two, three stars!',
-    image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=600&auto=format&fit=crop',
-    options: [
-      { text: '2 stars', subText: '2 ngôi sao', emoji: '⭐⭐', isCorrect: false },
-      { text: '3 stars', subText: '3 ngôi sao', emoji: '⭐⭐⭐', isCorrect: true },
-      { text: '5 stars', subText: '5 ngôi sao', emoji: '⭐⭐⭐⭐⭐', isCorrect: false }
-    ]
-  },
-  {
-    id: 4,
-    promptVi: 'Khi gặp thầy cô và bạn bè, bé chào câu gì?',
-    promptEn: 'When you meet a friend, what do you say? 👋',
-    speakText: 'When you meet a friend, what do you say? Hello! How are you?',
-    image: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?w=600&auto=format&fit=crop',
-    options: [
-      { text: 'Hello! How are you?', subText: 'Xin chào! Bạn có khỏe không?', emoji: '👋', isCorrect: true },
-      { text: 'Good night!', subText: 'Chúc ngủ ngon!', emoji: '🌙', isCorrect: false },
-      { text: 'Thank you, apple!', subText: 'Cảm ơn quả táo!', emoji: '🍏', isCorrect: false }
-    ]
-  }
-];
-
 export default function DuolingoOnboarding() {
   const navigate = useNavigate();
 
   // Các bước: GOALS -> PLACEMENT_TEST -> RESULT -> CREATE_PROFILE -> SUCCESS
   const [step, setStep] = useState<'GOALS' | 'PLACEMENT_TEST' | 'RESULT' | 'CREATE_PROFILE' | 'SUCCESS'>('GOALS');
+  const [placementQuestions, setPlacementQuestions] = useState<PlacementQuestion[]>([]);
+  const [isLoadingPlacementQuestions, setIsLoadingPlacementQuestions] = useState(false);
+  const [placementQuestionsError, setPlacementQuestionsError] = useState('');
 
   // Step 1: Mục tiêu
   const [selectedGoal, setSelectedGoal] = useState<string>('grade_1');
@@ -169,34 +123,54 @@ export default function DuolingoOnboarding() {
   });
 
   // ================= XỬ LÝ STEP 1: CHỌN MỤC TIÊU =================
-  const handleProceedToTest = () => {
+  const handleProceedToTest = async () => {
     sounds.playClick();
-    setStep('PLACEMENT_TEST');
-    setCurrentQIndex(0);
-    setSelectedOptionIndex(null);
-    setIsChecked(false);
-    setScore(0);
+    setPlacementQuestionsError('');
+    setIsLoadingPlacementQuestions(true);
+    try {
+      const questions = placementQuestions.length > 0
+        ? placementQuestions
+        : await placementService.getQuestions();
+      setPlacementQuestions(questions);
+      setStep('PLACEMENT_TEST');
+      setCurrentQIndex(0);
+      setSelectedOptionIndex(null);
+      setIsChecked(false);
+      setScore(0);
     // Tự động phát âm câu hỏi 1
-    setTimeout(() => {
-      speakEnglish(PLACEMENT_QUESTIONS[0].speakText);
-    }, 400);
+    scheduleBilingual(questions[0].speakText || questions[0].promptEn, questions[0].promptVi, 400);
+    } catch (error) {
+      setPlacementQuestionsError(error instanceof Error ? error.message : 'Không thể tải câu hỏi khảo sát từ Backend.');
+    } finally {
+      setIsLoadingPlacementQuestions(false);
+    }
   };
 
   // ================= XỬ LÝ STEP 2: BÀI MỒI TEST =================
-  const currentQ = PLACEMENT_QUESTIONS[currentQIndex];
+  const currentQ = placementQuestions[currentQIndex];
+  const correctOption = currentQ?.options.find((option) => option.isCorrect);
+  const questionImage = currentQ?.image || (correctOption
+    ? getVocabularyDisplayImage(correctOption.text, undefined, correctOption.subText)
+    : '');
+
+  const speakQuestion = (question: PlacementQuestion) => {
+    void speakBilingual(question.speakText || question.promptEn, question.promptVi);
+  };
 
   const handleSelectOption = (idx: number) => {
-    if (isChecked) return;
+    if (isChecked || !currentQ) return;
+    const option = currentQ.options[idx];
+    if (!option) return;
     sounds.playClick();
     setSelectedOptionIndex(idx);
     // Phát âm từ vựng tương ứng
-    speakEnglish(currentQ.options[idx].text);
+    void speakBilingual(option.text, option.subText);
   };
 
   const handleCheckAnswer = () => {
-    if (selectedOptionIndex === null) return;
+    if (!currentQ || selectedOptionIndex === null) return;
     setIsChecked(true);
-    const isCorrect = currentQ.options[selectedOptionIndex].isCorrect;
+    const isCorrect = currentQ.options[selectedOptionIndex]?.isCorrect;
 
     if (isCorrect) {
       sounds.playCorrect();
@@ -207,18 +181,19 @@ export default function DuolingoOnboarding() {
   };
 
   const handleNextQuestion = () => {
+    if (!currentQ) return;
     sounds.playClick();
-    if (currentQIndex + 1 < PLACEMENT_QUESTIONS.length) {
+    cancelSpeech();
+    if (currentQIndex + 1 < placementQuestions.length) {
       const nextIdx = currentQIndex + 1;
       setCurrentQIndex(nextIdx);
       setSelectedOptionIndex(null);
       setIsChecked(false);
-      setTimeout(() => {
-        speakEnglish(PLACEMENT_QUESTIONS[nextIdx].speakText);
-      }, 300);
+      const nextQuestion = placementQuestions[nextIdx];
+      scheduleBilingual(nextQuestion.speakText || nextQuestion.promptEn, nextQuestion.promptVi, 300);
     } else {
       // Kết thúc bài test, tính điểm và xếp lớp
-      const finalScore = score + (selectedOptionIndex !== null && currentQ.options[selectedOptionIndex].isCorrect ? 1 : 0);
+      const finalScore = score + (selectedOptionIndex !== null && currentQ.options[selectedOptionIndex]?.isCorrect ? 1 : 0);
       sounds.playVictory();
 
       let recAge = '3';
@@ -308,7 +283,7 @@ export default function DuolingoOnboarding() {
   };
 
   // Progress Bar calculation
-  const progressPercent = step === 'GOALS' ? 15 : step === 'PLACEMENT_TEST' ? 20 + ((currentQIndex + 1) / PLACEMENT_QUESTIONS.length) * 60 : 100;
+  const progressPercent = step === 'GOALS' ? 15 : step === 'PLACEMENT_TEST' ? 20 + ((currentQIndex + 1) / Math.max(placementQuestions.length, 1)) * 60 : 100;
 
   return (
     <div style={{
@@ -539,9 +514,15 @@ export default function DuolingoOnboarding() {
           </div>
 
           {/* Bottom Action Button */}
+          {placementQuestionsError && (
+            <div style={{ color: '#B91C1C', fontWeight: 700, textAlign: 'center' }}>
+              {placementQuestionsError}
+            </div>
+          )}
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: '8px' }}>
             <button
               onClick={handleProceedToTest}
+              disabled={isLoadingPlacementQuestions}
               style={{
                 backgroundColor: '#58CC02',
                 color: '#FFFFFF',
@@ -567,7 +548,7 @@ export default function DuolingoOnboarding() {
       )}
 
       {/* ================= STEP 2: BÀI MỒI THỬ THÁCH (4 CÂU HỎI) ================= */}
-      {step === 'PLACEMENT_TEST' && (
+      {step === 'PLACEMENT_TEST' && currentQ && (
         <div style={{ padding: '32px 32px 100px 32px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
           {/* Header question status */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -581,12 +562,12 @@ export default function DuolingoOnboarding() {
               borderRadius: '999px',
               border: '1.5px solid #BAE6FD'
             }}>
-              🎯 Câu hỏi {currentQIndex + 1} / {PLACEMENT_QUESTIONS.length}
+              🎯 Câu hỏi {currentQIndex + 1} / {placementQuestions.length}
             </span>
 
             <button
               type="button"
-              onClick={() => speakEnglish(currentQ.speakText)}
+              onClick={() => speakQuestion(currentQ)}
               style={{
                 backgroundColor: '#FEF08A',
                 border: '2px solid #EAB308',
@@ -604,7 +585,7 @@ export default function DuolingoOnboarding() {
               }}
             >
               <span>🔊</span>
-              <span>Nghe giọng đọc bản ngữ</span>
+              <span>Nghe tiếng Anh + tiếng Việt</span>
             </button>
           </div>
 
@@ -645,7 +626,7 @@ export default function DuolingoOnboarding() {
             overflow: 'hidden'
           }}>
             <img
-              src={currentQ.image}
+              src={questionImage}
               alt="Illustration"
               style={{
                 maxHeight: '220px',
@@ -808,7 +789,7 @@ export default function DuolingoOnboarding() {
                     boxShadow: currentQ.options[selectedOptionIndex || 0]?.isCorrect ? '0 5px 0 #46A302' : '0 5px 0 #B91C1C'
                   }}
                 >
-                  {currentQIndex + 1 < PLACEMENT_QUESTIONS.length ? 'TIẾP TỤC ➔' : 'XEM KẾT QUẢ XẾP LỚP 🏆'}
+                  {currentQIndex + 1 < placementQuestions.length ? 'TIẾP TỤC ➔' : 'XEM KẾT QUẢ XẾP LỚP 🏆'}
                 </button>
               </>
             )}
@@ -841,7 +822,7 @@ export default function DuolingoOnboarding() {
               Hoan Hô Bé Đã Hoàn Thành Bài Mồi Xuất Sắc! 🎉
             </h2>
             <p style={{ fontSize: '16px', color: '#475569', maxWidth: '600px', margin: '0 auto', fontWeight: 600 }}>
-              Bé đã trả lời đúng <strong style={{ color: '#16A34A', fontSize: '18px' }}>{score} / {PLACEMENT_QUESTIONS.length}</strong> câu hỏi tiếng Anh!
+              Bé đã trả lời đúng <strong style={{ color: '#16A34A', fontSize: '18px' }}>{score} / {placementQuestions.length}</strong> câu hỏi tiếng Anh!
             </p>
           </div>
 

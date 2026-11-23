@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { sounds, speakBilingual } from '../../utils/soundEffects';
+import { cancelSpeech, scheduleBilingual, sounds, speakBilingual } from '../../utils/soundEffects';
 import { authService } from '../../services/authService';
 import { userDataService } from '../../services/userDataService';
 import { progressService, type LessonRewardResult } from '../../services/progressService';
@@ -566,6 +566,7 @@ export default function MiniGame() {
   }, [currentMode, selectedTopicId, gameTopics]);
 
   const initGameByMode = (mode: GameMode, topicId: string) => {
+    cancelSpeech();
     const topic = gameTopics.find((t) => t.id === topicId) || gameTopics[0] || CHILD_FRIENDLY_GAME_TOPICS[0];
     setIsGameOver(false);
     setCountGameError('');
@@ -653,6 +654,7 @@ export default function MiniGame() {
   };
 
   const nextCountingQuestion = (topic: GameTopic, nextIndex = countQuestionIndex + 1, queueOverride?: GameWord[]) => {
+    cancelSpeech();
     const queue = queueOverride && queueOverride.length > 0
       ? queueOverride
       : countQueue.length > 0
@@ -670,12 +672,11 @@ export default function MiniGame() {
       options: shuffle([count, ...distractors])
     });
     setCountQuestionIndex(nextIndex);
-    setTimeout(() => {
-      void speakBilingual(`How many ${object.word.toLowerCase()}?`, `Có bao nhiêu ${object.meaning.toLowerCase()}?`);
-    }, 350);
+    scheduleBilingual(`How many ${object.word.toLowerCase()}?`, `Có bao nhiêu ${object.meaning.toLowerCase()}?`, 350);
   };
 
   const nextSentenceQuestion = (topic: GameTopic, nextIndex = sentenceQuestionIndex + 1, queueOverride?: SentenceQuestion[]) => {
+    cancelSpeech();
     const queue = queueOverride && queueOverride.length > 0
       ? queueOverride
       : sentenceQueue.length > 0
@@ -687,12 +688,11 @@ export default function MiniGame() {
     setSentenceQuestion(question);
     setSentenceQuestionIndex(nextIndex);
     setSelectedSentenceTokens([]);
-    setTimeout(() => {
-      void speakBilingual(question.sentence, question.translation);
-    }, 350);
+    scheduleBilingual(question.sentence, question.translation, 350);
   };
 
   const nextListenQuestion = (topic: GameTopic, nextIndex = listenQuestionIndex + 1, queueOverride?: GameWord[]) => {
+    cancelSpeech();
     const queue = queueOverride && queueOverride.length > 0 ? queueOverride : listenQueue;
     const chosen = queue[nextIndex];
     if (!chosen) return;
@@ -705,9 +705,7 @@ export default function MiniGame() {
     setListenQuestionIndex(nextIndex);
 
     // Tự động phát âm từ cần tìm
-    setTimeout(() => {
-      void speakBilingual(chosen.word, chosen.meaning);
-    }, 400);
+    scheduleBilingual(chosen.word, chosen.meaning, 400);
   };
 
   // ================= XỬ LÝ GAME 1: MATCHING =================

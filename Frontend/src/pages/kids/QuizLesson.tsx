@@ -4,7 +4,7 @@ import { courseService } from '../../services/courseService';
 import { progressService, type LessonRewardResult } from '../../services/progressService';
 import { authService } from '../../services/authService';
 import type { Question, Answer } from '../../types';
-import { speakBilingual, sounds } from '../../utils/soundEffects';
+import { cancelSpeech, speakBilingual, sounds } from '../../utils/soundEffects';
 import { getVocabularyDisplayImage } from '../../utils/vocabularyVisuals';
 import RewardPopup from '../../components/RewardPopup';
 import FireworksCelebration from '../../components/FireworksCelebration';
@@ -99,6 +99,7 @@ export default function QuizLesson() {
 
   const handleNextQuestion = () => {
     sounds.playClick();
+    cancelSpeech();
     if (currentIndex < questions.length - 1) {
       setCurrentIndex(currentIndex + 1);
       setSelectedAnswer(null);
@@ -115,6 +116,7 @@ export default function QuizLesson() {
 
   const handleRestart = () => {
     sounds.playClick();
+    cancelSpeech();
     setCurrentIndex(0);
     setQuestions(originalQuestions.map(shuffleQuestionAnswers));
     setRetryQuestionIds({});

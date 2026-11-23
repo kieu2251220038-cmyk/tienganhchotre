@@ -160,127 +160,114 @@ if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
   };
 }
 
-// Native Web Speech Synthesis for clear English pronunciation
-export const speakEnglish = (text: string, rate: number = 0.85): Promise<void> => {
-  return new Promise((resolve) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      resolve();
-      return;
-    }
+// Phiên đọc dùng chung: hủy phiên cũ cũng hủy các lệnh đang chờ phát.
+let speechRequestId = 0;
+const pendingSpeechTimers = new Set<number>();
 
+export const cancelSpeech = (): void => {
+  speechRequestId += 1;
+  if (typeof window !== 'undefined') {
+    pendingSpeechTimers.forEach((timer) => window.clearTimeout(timer));
+  }
+  pendingSpeechTimers.clear();
+  activeUtterance = null;
+
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
     try {
-      // Khắc phục lỗi paused của Chrome
-      if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume();
-      }
-      window.speechSynthesis.cancel(); // Dừng câu đọc dở trước đó
-
-      const clean = text.trim();
-      let textToSpeak = clean;
-      // Nếu là chữ cái đơn, đọc tên chữ cái chuẩn (A -> "ay", B -> "bee", ...)
-      if (clean.length === 1 && /^[a-zA-Z]$/.test(clean)) {
-        textToSpeak = LETTER_SPOKEN_MAP[clean.toUpperCase()] || clean;
-      }
-
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
-      utterance.lang = 'en-US';
-      utterance.rate = rate; // Tốc độ vừa phải cho bé nghe rõ
-      utterance.pitch = 1.05; // Cao độ tự nhiên, thân thiện với trẻ em
-
-      // Chọn giọng tiếng Anh chuẩn nếu có
-      try {
-        const voices = window.speechSynthesis.getVoices();
-        if (voices.length > 0) {
-          const preferredVoice = voices.find(
-            (v) => v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Samantha') || v.name.includes('Jenny') || v.name.includes('David') || v.name.includes('Zira'))
-          ) || voices.find((v) => v.lang.startsWith('en'));
-          if (preferredVoice) {
-            utterance.voice = preferredVoice;
-          }
-        }
-      } catch {}
-
-      activeUtterance = utterance;
-
-      utterance.onend = () => {
-        activeUtterance = null;
-        resolve();
-      };
-      utterance.onerror = () => {
-        activeUtterance = null;
-        resolve();
-      };
-
-      // Delay 40ms để tránh xung đột lệnh cancel() bất đồng bộ trên Chrome
-      window.setTimeout(() => {
-        try {
-          if (window.speechSynthesis.paused) {
-            window.speechSynthesis.resume();
-          }
-          if (activeUtterance) {
-            window.speechSynthesis.speak(activeUtterance);
-          }
-        } catch {
-          resolve();
-        }
-      }, 40);
-    } catch {
-      resolve();
-    }
-  });
-};
-
-// Native Web Speech Synthesis cho tieng Viet. Dung voice vi-VN neu trinh duyet co san.
-export const speakVietnamese = (text: string, rate: number = 0.9): Promise<void> => {
-  return new Promise((resolve) => {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-      resolve();
-      return;
-    }
-
-    try {
-      if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume();
-      }
       window.speechSynthesis.cancel();
-
-      const utterance = new SpeechSynthesisUtterance(text.trim());
-      utterance.lang = 'vi-VN';
-      utterance.rate = rate;
-      utterance.pitch = 1.05;
-
-      try {
-        const voices = window.speechSynthesis.getVoices();
-        const preferredVoice = voices.find((voice) => voice.lang.toLowerCase().startsWith('vi'));
-        if (preferredVoice) utterance.voice = preferredVoice;
-      } catch {}
-
-      activeUtterance = utterance;
-      utterance.onend = () => {
-        activeUtterance = null;
-        resolve();
-      };
-      utterance.onerror = () => {
-        activeUtterance = null;
-        resolve();
-      };
-
-      window.setTimeout(() => {
-        try {
-          if (window.speechSynthesis.paused) window.speechSynthesis.resume();
-          if (activeUtterance) window.speechSynthesis.speak(activeUtterance);
-        } catch {
-          resolve();
-        }
-      }, 40);
-    } catch {
-      resolve();
-    }
-  });
+    } catch {}
+  }
 };
 
-// Doc tuan tu tieng Anh truoc, tieng Viet sau cho noi dung trong game.
-export const speakBilingual = async (english: string, vietnamese: string, rate: number = 0.85): Promise<void> => {
-  await speakEnglish(english, rate);
-  if (vietnamese.trim()) await speakVietnamese(vietnamese, rate);
+const speakWithVoice = (
+  text: string,
+  language: 'en-US' | 'vi-VN',
+  rate: number,
+  requestId: number
+): Promise<void> => new Promise((resolve) => {
+  if (typeof window === 'undefined' || !('speechSynthesis' in window) || requestId !== speechRequestId) {
+    resolve();
+    return;
+  }
+
+  try {
+    window.speechSynthesis.cancel();
+    const clean = text.trim();
+    let textToSpeak = clean;
+
+    if (language === 'en-US' && clean.length === 1 && /^[a-zA-Z]$/.test(clean)) {
+      textToSpeak = LETTER_SPOKEN_MAP[clean.toUpperCase()] || clean;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    utterance.lang = language;
+    utterance.rate = rate;
+    utterance.pitch = 1.05;
+
+    try {
+      const voices = window.speechSynthesis.getVoices();
+      const preferredVoice = language === 'en-US'
+        ? voices.find((voice) => voice.lang.startsWith('en') && (voice.name.includes('Google') || voice.name.includes('Natural') || voice.name.includes('Samantha') || voice.name.includes('Jenny') || voice.name.includes('David') || voice.name.includes('Zira')))
+          || voices.find((voice) => voice.lang.startsWith('en'))
+        : voices.find((voice) => voice.lang.toLowerCase().startsWith('vi'));
+      if (preferredVoice) utterance.voice = preferredVoice;
+    } catch {}
+
+    activeUtterance = utterance;
+    const finish = () => {
+      if (activeUtterance === utterance) activeUtterance = null;
+      resolve();
+    };
+    utterance.onend = finish;
+    utterance.onerror = finish;
+
+    window.setTimeout(() => {
+      if (requestId !== speechRequestId || activeUtterance !== utterance) {
+        resolve();
+        return;
+      }
+      try {
+        if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+        window.speechSynthesis.speak(utterance);
+      } catch {
+        finish();
+      }
+    }, 40);
+  } catch {
+    resolve();
+  }
+});
+
+// Tốc độ 1.0 nhanh hơn mức cũ nhưng vẫn rõ cho trẻ nghe.
+export const speakEnglish = (text: string, rate: number = 1.0): Promise<void> => {
+  const requestId = ++speechRequestId;
+  return speakWithVoice(text, 'en-US', rate, requestId);
+};
+
+export const speakVietnamese = (text: string, rate: number = 1.0): Promise<void> => {
+  const requestId = ++speechRequestId;
+  return speakWithVoice(text, 'vi-VN', rate, requestId);
+};
+
+// Đọc tuần tự tiếng Anh trước, tiếng Việt sau.
+export const speakBilingual = async (english: string, vietnamese: string, rate: number = 1.0): Promise<void> => {
+  const requestId = ++speechRequestId;
+  await speakWithVoice(english, 'en-US', rate, requestId);
+  if (requestId !== speechRequestId || !vietnamese.trim()) return;
+  await speakWithVoice(vietnamese, 'vi-VN', rate, requestId);
+};
+
+export const scheduleBilingual = (
+  english: string,
+  vietnamese: string,
+  delay = 0,
+  rate = 1.0
+): number | null => {
+  if (typeof window === 'undefined') return null;
+  const timer = window.setTimeout(() => {
+    pendingSpeechTimers.delete(timer);
+    void speakBilingual(english, vietnamese, rate);
+  }, delay);
+  pendingSpeechTimers.add(timer);
+  return timer;
 };

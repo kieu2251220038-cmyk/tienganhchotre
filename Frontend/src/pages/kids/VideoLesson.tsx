@@ -4,7 +4,7 @@ import { courseService } from '../../services/courseService';
 import { progressService, type LessonRewardResult } from '../../services/progressService';
 import { authService } from '../../services/authService';
 import type { Lesson, Vocabulary } from '../../types';
-import { speakEnglish, sounds } from '../../utils/soundEffects';
+import { speakBilingual, sounds } from '../../utils/soundEffects';
 import { getVocabularyDisplayImage } from '../../utils/vocabularyVisuals';
 import RewardPopup from '../../components/RewardPopup';
 
@@ -34,9 +34,9 @@ export default function VideoLesson() {
     });
   };
 
-  const handlePronounceWord = (word: string) => {
+  const handlePronounceWord = (vocabulary: Vocabulary) => {
     sounds.playClick();
-    speakEnglish(word);
+    void speakBilingual(vocabulary.word, vocabulary.meaning_vi);
   };
 
   return (
@@ -142,7 +142,7 @@ export default function VideoLesson() {
             {vocabList.slice(0, 4).map((v) => (
               <div
                 key={v.id}
-                onClick={() => handlePronounceWord(v.word)}
+                onClick={() => handlePronounceWord(v)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',

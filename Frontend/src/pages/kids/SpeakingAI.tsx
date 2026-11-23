@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSearchParams } from 'react-router-dom';
-import { sounds, speakEnglish } from '../../utils/soundEffects';
+import { cancelSpeech, speakEnglish, sounds } from '../../utils/soundEffects';
 import { authService } from '../../services/authService';
 import { progressService, type LessonRewardResult } from '../../services/progressService';
 import { courseService } from '../../services/courseService';
@@ -11,6 +11,7 @@ import speakingSummaryService from '../../services/speakingSummaryService';
 import type { PronunciationAttempt, SpeakingSummary } from '../../services/speakingSummaryService';
 import FireworksCelebration from '../../components/FireworksCelebration';
 import RewardPopup from '../../components/RewardPopup';
+import { getVocabularyDisplayImage } from '../../utils/vocabularyVisuals';
 
 // Ngưỡng đạt dành cho trẻ nhỏ: chỉ cần mức tương đồng từ 50% trở lên.
 const PRONUNCIATION_PASS_SCORE = 50;
@@ -21,6 +22,7 @@ interface WordItem {
   meaning_vi: string;
   phonetic: string;
   emoji: string;
+  image: string;
 }
 
 const AGE5_EMOJIS: Record<string, string> = {
@@ -134,6 +136,7 @@ export default function SpeakingAI() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isRecording, setIsRecording] = useState(false);
   const [isSpeakingSample, setIsSpeakingSample] = useState(false);
+  const [recordingNotice, setRecordingNotice] = useState('');
   const [recognizedText, setRecognizedText] = useState<string>('');
   const [score, setScore] = useState<number | null>(null);
   const [aiFeedback, setAiFeedback] = useState<string>('');
@@ -148,10 +151,14 @@ export default function SpeakingAI() {
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<number | null>(null);
+  const hasSubmittedCurrentWordRef = useRef(false);
 
   useEffect(() => {
+    cancelSpeech();
     pronunciationAttemptsRef.current = [];
+    hasSubmittedCurrentWordRef.current = false;
     setSessionSummary(null);
+    setRecordingNotice('');
   }, [lessonId, topicId]);
 
   useEffect(() => {
@@ -169,6 +176,7 @@ export default function SpeakingAI() {
   }, []);
 
   useEffect(() => () => {
+    cancelSpeech();
     if (recordingTimerRef.current !== null) window.clearTimeout(recordingTimerRef.current);
     if (mediaRecorderRef.current?.state === 'recording') mediaRecorderRef.current.stop();
     mediaStreamRef.current?.getTracks().forEach((track) => track.stop());
@@ -183,11 +191,12 @@ export default function SpeakingAI() {
       const topicItems = vocabularies
         .map((vocabulary) => {
           const rawWord = vocabulary.word.trim();
-          if (isAge3 && !/^[A-Z]$/i.test(rawWord)) return null;
           const label = rawWord.charAt(0).toUpperCase() + rawWord.slice(1);
           return {
             id: vocabulary.id,
             word: isAge5
+              ? label
+              : isAge3
               ? label
               : isAge6
               ? AGE6_SENTENCES[label] || `This is my ${rawWord.toLowerCase()}.`
@@ -197,7 +206,9 @@ export default function SpeakingAI() {
               ? AGE8_SENTENCES[label] || `The ${rawWord.toLowerCase()} is important.`
               : rawWord.toUpperCase(),
             meaning_vi: isAge3
-              ? `Chữ ${rawWord.toUpperCase()}`
+              ? /^[A-Z]$/i.test(rawWord)
+                ? `Chữ ${rawWord.toUpperCase()}`
+                : vocabulary.meaning_vi
               : isAge7
               ? AGE7_MEANINGS[label] || vocabulary.meaning_vi
               : isAge8
@@ -212,7 +223,8 @@ export default function SpeakingAI() {
               ? AGE7_EMOJIS[label] || '📖'
               : isAge8
               ? AGE8_EMOJIS[label] || '🌍'
-              : rawWord.toUpperCase()
+              : rawWord.toUpperCase(),
+            image: getVocabularyDisplayImage(rawWord, vocabulary.image_url, vocabulary.meaning_vi)
           };
         })
         .filter((item): item is WordItem => item !== null);
@@ -241,7 +253,9 @@ export default function SpeakingAI() {
     );
   }
   const targetLabel = isAge3
-    ? `chữ ${currentItem.word}`
+    ? /^[A-Z]$/i.test(currentItem.word.trim())
+      ? `chữ ${currentItem.word}`
+      : `từ "${currentItem.word}"`
     : isAge4
     ? `từ "${currentItem.word}"`
     : isAge5
@@ -252,8 +266,13 @@ export default function SpeakingAI() {
 
   const handleListenSample = () => {
     sounds.playClick();
+    if (isSpeakingSample) {
+      setRecordingNotice('Bé hãy nghe hết phần phát âm mẫu trước nhé!');
+      return;
+    }
+    setRecordingNotice('');
     setIsSpeakingSample(true);
-    speakEnglish(currentItem.word).finally(() => {
+    void speakEnglish(currentItem.word).finally(() => {
       setIsSpeakingSample(false);
     });
   };
@@ -508,6 +527,7 @@ export default function SpeakingAI() {
 
     recorder.onstart = () => {
       setIsRecording(true);
+      setRecordingNotice('');
       setRecognizedText('Đang ghi âm, bé hãy đọc thật rõ...');
       setScore(null);
       setAiFeedback('');
@@ -519,6 +539,7 @@ export default function SpeakingAI() {
 
     recorder.onerror = () => {
       setIsRecording(false);
+      hasSubmittedCurrentWordRef.current = true;
       mediaRecorderRef.current = null;
       stream.getTracks().forEach((track) => track.stop());
       setScore(0);
@@ -542,6 +563,7 @@ export default function SpeakingAI() {
       audioChunksRef.current = [];
       const audioBlob = new Blob(chunks, { type: recorder.mimeType || mimeType || 'audio/webm' });
       setIsRecording(false);
+      hasSubmittedCurrentWordRef.current = true;
 
       if (audioBlob.size === 0) {
         setScore(0);
@@ -593,8 +615,8 @@ export default function SpeakingAI() {
     const wordCount = currentItem.word.trim().split(/\s+/).filter(Boolean).length;
     // Tự dừng sớm hơn sau khi bé nói xong; bé vẫn có thể chạm micro để dừng ngay.
     const recordingDuration = wordCount <= 1
-      ? 1800
-      : Math.min(4000, 1300 + wordCount * 500);
+      ? 3000
+      : Math.min(5000, 1300 + wordCount * 500);
     recordingTimerRef.current = window.setTimeout(() => {
       if (mediaRecorderRef.current === recorder && recorder.state === 'recording') recorder.stop();
     }, recordingDuration);
@@ -613,6 +635,13 @@ export default function SpeakingAI() {
       }
       return;
     }
+
+    if (hasSubmittedCurrentWordRef.current) {
+      setRecordingNotice('Bé đã hoàn thành lượt nói này rồi. Nếu muốn thử lại, hãy bấm “Nói lại” nhé!');
+      return;
+    }
+
+    setRecordingNotice('');
 
     if (!openAiWhisperEnabled && !whisperEnabled) {
       setScore(0);
@@ -657,7 +686,14 @@ export default function SpeakingAI() {
   };
 
   const handleNextWord = async () => {
+    if (score === null) {
+      setRecordingNotice('Bé hãy nói và chờ hệ thống chấm điểm trước khi sang từ tiếp theo nhé!');
+      return;
+    }
     sounds.playClick();
+    cancelSpeech();
+    hasSubmittedCurrentWordRef.current = false;
+    setRecordingNotice('');
     // Không chặn bé sang từ tiếp theo khi phát âm sai; điểm và phản hồi vẫn được lưu trên màn hình.
     if (currentIndex < lessonItems.length - 1) {
       setCurrentIndex(currentIndex + 1);
@@ -737,7 +773,6 @@ export default function SpeakingAI() {
 
         <button
           onClick={handleListenSample}
-          disabled={isSpeakingSample}
           className="btn-kid btn-primary"
           style={{ padding: '8px 16px', fontSize: '14px', opacity: isSpeakingSample ? 0.75 : 1 }}
         >
@@ -748,8 +783,21 @@ export default function SpeakingAI() {
       {/* ================= U08 - MÀN HÌNH LUYỆN PHÁT ÂM ================= */}
       <div className="card-kid" style={{ textAlign: 'center', padding: '36px 24px' }}>
         {/* Word Card */}
-        <div style={{ fontSize: '84px', marginBottom: '8px' }}>
-          {currentItem.emoji}
+        <div style={{
+          width: 'min(260px, 70vw)',
+          height: 'min(210px, 52vw)',
+          margin: '0 auto 14px',
+          borderRadius: '24px',
+          overflow: 'hidden',
+          border: '3px solid #E0F2FE',
+          boxShadow: '0 6px 0 #BAE6FD',
+          backgroundColor: '#F8FAFC'
+        }}>
+          <img
+            src={currentItem.image}
+            alt={currentItem.word}
+            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+          />
         </div>
 
         <h1 style={{ fontSize: '48px', color: '#1E293B', marginBottom: '4px' }}>
@@ -769,7 +817,6 @@ export default function SpeakingAI() {
           <button
             type="button"
             onClick={handleListenSample}
-            disabled={isSpeakingSample}
             className={`btn-kid btn-primary ${isSpeakingSample ? 'animate-pulse-glow' : ''}`}
             style={{
               padding: '12px 28px',
@@ -782,6 +829,7 @@ export default function SpeakingAI() {
               gap: '10px',
               borderRadius: '999px',
               cursor: isSpeakingSample ? 'wait' : 'pointer',
+              opacity: isSpeakingSample ? 0.8 : 1,
               transition: 'all 0.2s ease'
             }}
           >
@@ -792,7 +840,9 @@ export default function SpeakingAI() {
 
         <div style={{ margin: '-12px auto 20px', maxWidth: '500px', padding: '10px 14px', borderRadius: '12px', backgroundColor: '#EFF6FF', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: '14px', fontWeight: 700 }}>
           {isAge3
-            ? '🎙️ Bé hãy đọc tên chữ cái bằng tiếng Anh. Ví dụ: chữ A đọc là “ay”.'
+            ? /^[A-Z]$/i.test(currentItem.word.trim())
+              ? '🎙️ Bé hãy đọc tên chữ cái bằng tiếng Anh. Ví dụ: chữ A đọc là “ay”.'
+              : `🎙️ Bé hãy đọc từ vựng bằng tiếng Anh: “${currentItem.word}”`
             : isAge4
             ? `🎙️ Bé hãy đọc số hoặc tên hình bằng tiếng Anh: “${currentItem.word}”`
             : isAge5
@@ -819,6 +869,12 @@ export default function SpeakingAI() {
             ? '🖥️ Đang chấm bằng Whisper cục bộ'
             : '⚠️ Chưa sẵn sàng bộ nhận diện giọng nói'}
         </div>
+
+        {recordingNotice && (
+          <div style={{ margin: '-4px auto 14px', maxWidth: '500px', padding: '10px 14px', borderRadius: '12px', backgroundColor: '#EFF6FF', border: '1.5px solid #93C5FD', color: '#1D4ED8', fontSize: '14px', fontWeight: 700 }}>
+            💡 {recordingNotice}
+          </div>
+        )}
 
         {/* Big Animated Microphone Button */}
         <div style={{ margin: '24px 0' }}>
@@ -941,6 +997,9 @@ export default function SpeakingAI() {
       <div style={{ display: 'flex', gap: '16px', justifyContent: 'space-between' }}>
         <button
           onClick={() => {
+            cancelSpeech();
+            hasSubmittedCurrentWordRef.current = false;
+            setRecordingNotice('');
             setScore(null);
             setRecognizedText('');
             setAiFeedback('');
@@ -954,8 +1013,15 @@ export default function SpeakingAI() {
 
         <button
           onClick={handleNextWord}
+          disabled={score === null || isRecording}
           className="btn-kid btn-primary"
-          style={{ flex: 1.5, padding: '14px', fontSize: '1.1rem' }}
+          style={{
+            flex: 1.5,
+            padding: '14px',
+            fontSize: '1.1rem',
+            opacity: score === null || isRecording ? 0.55 : 1,
+            cursor: score === null || isRecording ? 'not-allowed' : 'pointer'
+          }}
         >
           {score !== null && score < PRONUNCIATION_PASS_SCORE && false
             ? '🎙️ Nói lại để tiếp tục'

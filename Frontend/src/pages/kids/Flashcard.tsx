@@ -5,7 +5,7 @@ import { courseService } from '../../services/courseService';
 import { progressService, type LessonRewardResult } from '../../services/progressService';
 import { authService } from '../../services/authService';
 import type { Vocabulary } from '../../types';
-import { speakEnglish, sounds } from '../../utils/soundEffects';
+import { cancelSpeech, speakEnglish, speakVietnamese, sounds } from '../../utils/soundEffects';
 import { getVocabularyDisplayImage, getVocabularyFallbackImage } from '../../utils/vocabularyVisuals';
 import RewardPopup from '../../components/RewardPopup';
 
@@ -46,11 +46,27 @@ export default function Flashcard() {
   const handlePronounce = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     sounds.playClick();
-    speakEnglish(currentWord.word);
+    cancelSpeech();
+    if (isFlipped) {
+      void speakVietnamese(currentWord.meaning_vi);
+    } else {
+      void speakEnglish(currentWord.word);
+    }
+  };
+
+  const handleFlip = () => {
+    sounds.playClick();
+    cancelSpeech();
+    const nextIsFlipped = !isFlipped;
+    setIsFlipped(nextIsFlipped);
+    if (nextIsFlipped) {
+      void speakVietnamese(currentWord.meaning_vi);
+    }
   };
 
   const handleNext = () => {
     sounds.playClick();
+    cancelSpeech();
     setIsFlipped(false);
     const viewedWord = vocabList[currentIndex];
     if (viewedWord?.id) {
@@ -70,6 +86,7 @@ export default function Flashcard() {
 
   const handlePrev = () => {
     sounds.playClick();
+    cancelSpeech();
     setIsFlipped(false);
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
@@ -78,6 +95,7 @@ export default function Flashcard() {
 
   const handleReset = () => {
     sounds.playClick();
+    cancelSpeech();
     setCurrentIndex(0);
     setIsFlipped(false);
     setIsCompleted(false);
@@ -177,7 +195,7 @@ export default function Flashcard() {
       ) : (
         /* ================= U04 - 3D FLIP FLASHCARD ================= */
         <div
-          onClick={() => { sounds.playClick(); setIsFlipped(!isFlipped); }}
+          onClick={handleFlip}
           style={{
             cursor: 'pointer',
             minHeight: '520px',
