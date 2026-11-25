@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import { sounds } from '../../utils/soundEffects';
 
 export default function ParentLogin() {
   const navigate = useNavigate();
-  const [username, setUsername] = useState('phuhuynh_huong');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('123456');
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
@@ -93,14 +93,16 @@ export default function ParentLogin() {
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: '#4C0519', marginBottom: '6px' }}>
-              Tên tài khoản Phụ huynh
+              Email phụ huynh
             </label>
             <input
               type="text"
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="phuhuynh_huong"
+              placeholder="phuhuynh@example.com"
+              inputMode="email"
+              autoComplete="email"
               style={{
                 width: '100%',
                 padding: '13px 16px',
@@ -141,6 +143,12 @@ export default function ParentLogin() {
             />
           </div>
 
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-8px' }}>
+            <Link to="/forgot-password?role=PARENT" style={{ color: '#BE123C', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
+              Quên mật khẩu?
+            </Link>
+          </div>
+
           {/* Gợi ý tài khoản mẫu */}
           <div style={{
             backgroundColor: '#FFF1F2',
@@ -176,37 +184,6 @@ export default function ParentLogin() {
           </button>
         </form>
 
-        {/* Chuyển hướng các cổng khác */}
-        <div style={{
-          marginTop: '28px',
-          paddingTop: '20px',
-          borderTop: '1.5px solid #FFE4E6',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
-          textAlign: 'center'
-        }}>
-          <Link
-            to="/"
-            style={{
-              color: '#475569',
-              fontSize: '13.5px',
-              fontWeight: 700,
-              textDecoration: 'none'
-            }}
-          >
-            ← Quay về Cổng Học Sinh (Trang Chủ)
-          </Link>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', fontSize: '13px' }}>
-            <Link to="/expert/login" style={{ color: '#7C3AED', fontWeight: 700, textDecoration: 'none' }}>
-              👩‍🏫 Cổng Chuyên Gia / Admin
-            </Link>
-            <span style={{ color: '#CBD5E1' }}>|</span>
-            <Link to="/admin/login" style={{ color: '#0284C7', fontWeight: 700, textDecoration: 'none' }}>
-              🛡️ Cổng Quản Trị
-            </Link>
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -26,6 +26,7 @@ export interface AdminCourse {
 export interface AdminUser {
   id: number;
   username: string;
+  email?: string | null;
   display_name: string;
   role: 'USER' | 'ADMIN' | 'EXPERT' | 'PARENT';
   age_group: string;

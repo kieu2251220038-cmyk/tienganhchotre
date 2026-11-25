@@ -5,6 +5,7 @@ import { sounds } from '../../utils/soundEffects';
 
 export default function Register() {
   const navigate = useNavigate();
+  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
@@ -19,10 +20,10 @@ export default function Register() {
     setLoading(true);
 
     try {
-      await authService.register(username, password, displayName, ageGroup);
+      await authService.register(email, username, password, displayName, ageGroup);
       sounds.playVictory();
       // Auto login
-      await authService.login(username, password);
+      await authService.login(email, password);
       navigate('/dashboard');
     } catch (err: unknown) {
       sounds.playWrong();
@@ -91,6 +92,31 @@ export default function Register() {
         )}
 
         <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          <div>
+            <label style={{ display: 'block', fontFamily: 'Fredoka, sans-serif', fontSize: '14px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+              Email của phụ huynh
+            </label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="phuhuynh@example.com"
+              autoComplete="email"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: '14px',
+                border: '2px solid #CBD5E1',
+                fontSize: '15px',
+                fontFamily: 'Nunito, sans-serif',
+                fontWeight: 600,
+                outline: 'none',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
           <div>
             <label style={{ display: 'block', fontFamily: 'Fredoka, sans-serif', fontSize: '14px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
               Tên bé yêu (Tên hiển thị)

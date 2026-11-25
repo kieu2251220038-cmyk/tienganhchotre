@@ -242,7 +242,7 @@ export const deleteAdminCourse = async (req: Request, res: Response): Promise<vo
 // 2. Quản lý Users (A02)
 export const getAdminUsers = async (req: Request, res: Response): Promise<void> => {
     try {
-        const [users]: any = await pool.query('SELECT id, username, display_name, role, age_group, created_at FROM users ORDER BY id DESC');
+        const [users]: any = await pool.query('SELECT id, username, email, display_name, role, age_group, created_at FROM users ORDER BY id DESC');
         res.status(200).json(users);
     } catch (error) {
         console.error('Lỗi lấy danh sách User:', error);
@@ -253,8 +253,29 @@ export const getAdminUsers = async (req: Request, res: Response): Promise<void> 
 export const updateAdminUser = async (req: Request, res: Response): Promise<void> => {
     const { id } = req.params;
     const { display_name, role, age_group } = req.body;
+    const hasEmailField = Object.prototype.hasOwnProperty.call(req.body, 'email');
+    const email = req.body.email === null || req.body.email === undefined
+        ? null
+        : String(req.body.email).trim().toLowerCase();
+
+    if (hasEmailField && email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        res.status(400).json({ message: 'Địa chỉ email không hợp lệ.' });
+        return;
+    }
     try {
-        await pool.query('UPDATE users SET display_name = ?, role = ?, age_group = ? WHERE id = ?', [display_name, role, age_group, id]);
+        if (email) {
+            const [existing]: any = await pool.query('SELECT id FROM users WHERE LOWER(email) = LOWER(?) AND id <> ?', [email, id]);
+            if (existing.length > 0) {
+                res.status(400).json({ message: 'Email này đã được sử dụng bởi tài khoản khác.' });
+                return;
+            }
+        }
+
+        if (hasEmailField) {
+            await pool.query('UPDATE users SET email = ?, display_name = ?, role = ?, age_group = ? WHERE id = ?', [email || null, display_name, role, age_group, id]);
+        } else {
+            await pool.query('UPDATE users SET display_name = ?, role = ?, age_group = ? WHERE id = ?', [display_name, role, age_group, id]);
+        }
         res.status(200).json({ message: 'Cập nhật tài khoản thành công!' });
     } catch (error) {
         console.error('Lỗi sửa User:', error);

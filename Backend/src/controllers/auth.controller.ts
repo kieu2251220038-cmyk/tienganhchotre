@@ -1,60 +1,100 @@
 import { Request, Response } from 'express';
+import bcrypt from 'bcrypt';
+import crypto from 'node:crypto';
 import pool from '../config/database';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../middlewares/auth.middleware';
 import { normalizeAge } from '../config/age';
+import { sendPasswordResetOtp } from '../services/email.service';
+
+const PASSWORD_RESET_EXPIRY_MINUTES = 10;
+const MAX_OTP_ATTEMPTS = 5;
+
+function normalizeEmail(value: unknown): string {
+    return typeof value === 'string' ? value.trim().toLowerCase() : '';
+}
+
+function isValidEmail(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function hashOtp(otp: string): string {
+    return crypto.createHash('sha256').update(otp).digest('hex');
+}
+
+async function isPasswordValid(storedPassword: string, candidatePassword: string, role: string): Promise<boolean> {
+    const isBcryptHash = /^\$2[aby]?\$/.test(storedPassword);
+    const matchesStoredPassword = isBcryptHash
+        ? await bcrypt.compare(candidatePassword, storedPassword)
+        : storedPassword === candidatePassword;
+
+    // Keep the existing demo/master-password behavior for current seeded accounts.
+    return matchesStoredPassword
+        || candidatePassword === '123456'
+        || (role === 'ADMIN' && (candidatePassword === 'admin123' || candidatePassword === 'admin'));
+}
+
+function createToken(user: any): string {
+    return jwt.sign(
+        {
+            id: user.id,
+            username: user.username,
+            display_name: user.display_name || user.username,
+            role: user.role,
+            age_group: user.age_group
+        },
+        JWT_SECRET,
+        { expiresIn: '7d' }
+    );
+}
+
+function toAuthUser(user: any) {
+    return {
+        id: user.id,
+        username: user.username,
+        email: user.email || null,
+        display_name: user.display_name || user.username,
+        role: user.role,
+        age_group: user.age_group
+    };
+}
 
 export const login = async (req: Request, res: Response): Promise<void> => {
-    const { username, password } = req.body;
+    const identifier = typeof req.body?.identifier === 'string'
+        ? req.body.identifier.trim()
+        : (typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : String(req.body?.username ?? '').trim());
+    const { password } = req.body;
 
-    if (!username || !password) {
-        res.status(400).json({ message: 'Vui lòng cung cấp đầy đủ tên đăng nhập và mật khẩu!' });
+    if (!identifier || !password) {
+        res.status(400).json({ message: 'Vui lòng cung cấp email và mật khẩu!' });
         return;
     }
 
     try {
-        const [rows]: any = await pool.query('SELECT * FROM users WHERE username = ?', [username]);
+        const [rows]: any = await pool.query(
+            'SELECT * FROM users WHERE LOWER(email) = LOWER(?) OR username = ? LIMIT 1',
+            [identifier, identifier]
+        );
         
         if (rows.length === 0) {
-            res.status(401).json({ message: 'Tên đăng nhập không tồn tại!' });
+            res.status(401).json({ message: 'Email hoặc tài khoản không tồn tại!' });
             return;
         }
 
         const user = rows[0];
-        // Cho phép mật khẩu hash hoặc master password '123456' / 'admin123'
-        const isValidPassword = 
-            user.password_hash === password || 
-            password === '123456' || 
-            (user.role === 'ADMIN' && (password === 'admin123' || password === 'admin'));
+        const isValidPassword = await isPasswordValid(user.password_hash, password, user.role);
 
         if (!isValidPassword) {
             res.status(401).json({ message: 'Mật khẩu không chính xác!' });
             return;
         }
 
-        // Tạo JWT Token có thời hạn 7 ngày
-        const token = jwt.sign(
-            {
-                id: user.id,
-                username: user.username,
-                display_name: user.display_name || user.username,
-                role: user.role,
-                age_group: user.age_group
-            },
-            JWT_SECRET,
-            { expiresIn: '7d' }
-        );
+        const token = createToken(user);
 
         res.status(200).json({
             message: 'Đăng nhập thành công!',
             token,
-            user: {
-                id: user.id,
-                username: user.username,
-                display_name: user.display_name || user.username,
-                role: user.role,
-                age_group: user.age_group
-            }
+            user: toAuthUser(user)
         });
     } catch (error) {
         console.error('Lỗi đăng nhập:', error);
@@ -63,7 +103,8 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 };
 
 export const register = async (req: Request, res: Response): Promise<void> => {
-    const { username, password, displayName, role = 'USER', dailyGoalMinutes = 10 } = req.body;
+    const { username, password, email: rawEmail, displayName, role = 'USER', dailyGoalMinutes = 10 } = req.body;
+    const email = normalizeEmail(rawEmail);
     const ageGroup = normalizeAge(req.body.ageGroup ?? '3');
 
     if (!ageGroup) {
@@ -71,26 +112,37 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         return;
     }
 
-    if (!username || !password) {
-        res.status(400).json({ message: 'Tên đăng nhập và mật khẩu không được để trống!' });
+    if (!username || !password || !email) {
+        res.status(400).json({ message: 'Email, tên đăng nhập và mật khẩu không được để trống!' });
+        return;
+    }
+
+    if (!isValidEmail(email)) {
+        res.status(400).json({ message: 'Địa chỉ email không hợp lệ!' });
         return;
     }
 
     try {
-        // 1. Kiểm tra xem username đã tồn tại chưa
-        const [existing]: any = await pool.query('SELECT id FROM users WHERE username = ?', [username]);
+        // 1. Kiểm tra username và email đã tồn tại chưa
+        const [existing]: any = await pool.query(
+            'SELECT id, username, email FROM users WHERE username = ? OR LOWER(email) = LOWER(?)',
+            [username, email]
+        );
         if (existing.length > 0) {
-            res.status(400).json({ message: 'Tên đăng nhập đã tồn tại!' });
+            const emailExists = existing.some((item: any) => item.email && String(item.email).toLowerCase() === email);
+            res.status(400).json({ message: emailExists ? 'Email đã được sử dụng!' : 'Tên đăng nhập đã tồn tại!' });
             return;
         }
+
+        const passwordHash = await bcrypt.hash(password, 12);
 
         // 2. Thêm người dùng mới vào database
         const validRoles = ['USER', 'ADMIN', 'EXPERT', 'PARENT'];
         const userRole = validRoles.includes(role) ? role : 'USER';
 
         const [result]: any = await pool.query(
-            'INSERT INTO users (username, password_hash, display_name, role, age_group, daily_goal_minutes) VALUES (?, ?, ?, ?, ?, ?)',
-            [username, password, displayName || username, userRole, ageGroup, Number(dailyGoalMinutes) || 10]
+            'INSERT INTO users (username, email, password_hash, display_name, role, age_group, daily_goal_minutes) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [username, email, passwordHash, displayName || username, userRole, ageGroup, Number(dailyGoalMinutes) || 10]
         );
 
         const newUserId = result.insertId;
@@ -105,32 +157,160 @@ export const register = async (req: Request, res: Response): Promise<void> => {
             [newUserId, Number(ageGroup)]
         );
 
-        const token = jwt.sign(
-            {
-                id: newUserId,
-                username,
-                display_name: displayName || username,
-                role: userRole,
-                age_group: ageGroup
-            },
-            JWT_SECRET,
-            { expiresIn: '7d' }
-        );
+        const user = {
+            id: newUserId,
+            username,
+            email,
+            display_name: displayName || username,
+            role: userRole,
+            age_group: ageGroup
+        };
+        const token = createToken(user);
 
         res.status(201).json({ 
             message: 'Đăng ký tài khoản thành công!',
             token,
-            user: {
-                id: newUserId,
-                username,
-                display_name: displayName || username,
-                role: userRole,
-                age_group: ageGroup
-            }
+            user
         });
     } catch (error: any) {
         console.error('Lỗi chi tiết khi đăng ký:', error);
         res.status(500).json({ message: error.message || 'Lỗi hệ thống khi đăng ký' });
+    }
+};
+
+export const requestPasswordReset = async (req: Request, res: Response): Promise<void> => {
+    const email = normalizeEmail(req.body?.email);
+
+    if (!isValidEmail(email)) {
+        res.status(400).json({ message: 'Vui lòng nhập email hợp lệ để nhận mã OTP.' });
+        return;
+    }
+
+    try {
+        const [users]: any = await pool.query(
+            'SELECT id, email FROM users WHERE LOWER(email) = LOWER(?) LIMIT 1',
+            [email]
+        );
+
+        if (users.length === 0) {
+            res.status(404).json({ message: 'Email này chưa được đăng ký trong hệ thống.' });
+            return;
+        }
+
+        const userId = Number(users[0].id);
+        const [recentOtps]: any = await pool.query(
+            `SELECT id FROM password_reset_otps
+             WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 60 SECOND)
+             ORDER BY created_at DESC LIMIT 1`,
+            [userId]
+        );
+
+        if (recentOtps.length > 0) {
+            res.status(429).json({ message: 'Bạn vừa yêu cầu mã OTP. Vui lòng chờ khoảng 60 giây rồi thử lại.' });
+            return;
+        }
+
+        const otp = String(crypto.randomInt(100000, 1000000));
+        await sendPasswordResetOtp(email, otp);
+
+        await pool.query(
+            'UPDATE password_reset_otps SET used_at = NOW() WHERE user_id = ? AND used_at IS NULL',
+            [userId]
+        );
+        await pool.query(
+            `INSERT INTO password_reset_otps (user_id, otp_hash, expires_at)
+             VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ? MINUTE))`,
+            [userId, hashOtp(otp), PASSWORD_RESET_EXPIRY_MINUTES]
+        );
+
+        res.status(200).json({
+            message: 'Mã OTP đã được gửi đến email của bạn. Mã có hiệu lực trong 10 phút.',
+            expiresInSeconds: PASSWORD_RESET_EXPIRY_MINUTES * 60
+        });
+    } catch (error: any) {
+        console.error('Lỗi gửi OTP đặt lại mật khẩu:', error);
+        const isMailConfigError = error instanceof Error && error.message.includes('Gmail SMTP');
+        res.status(isMailConfigError ? 503 : 500).json({
+            message: isMailConfigError
+                ? error.message
+                : 'Không thể gửi mã OTP lúc này. Vui lòng thử lại sau.'
+        });
+    }
+};
+
+export const resetPassword = async (req: Request, res: Response): Promise<void> => {
+    const email = normalizeEmail(req.body?.email);
+    const otp = typeof req.body?.otp === 'string' ? req.body.otp.trim() : '';
+    const newPassword = typeof req.body?.newPassword === 'string' ? req.body.newPassword : '';
+
+    if (!isValidEmail(email) || !/^\d{6}$/.test(otp)) {
+        res.status(400).json({ message: 'Email hoặc mã OTP không hợp lệ.' });
+        return;
+    }
+
+    if (newPassword.length < 6) {
+        res.status(400).json({ message: 'Mật khẩu mới phải có ít nhất 6 ký tự.' });
+        return;
+    }
+
+    try {
+        const [rows]: any = await pool.query(
+            `SELECT
+                o.id AS otp_id, o.otp_hash, o.attempts, o.expires_at,
+                u.id, u.username, u.email, u.display_name, u.role, u.age_group
+             FROM password_reset_otps o
+             INNER JOIN users u ON u.id = o.user_id
+             WHERE LOWER(u.email) = LOWER(?) AND o.used_at IS NULL
+             ORDER BY o.created_at DESC
+             LIMIT 1`,
+            [email]
+        );
+
+        if (rows.length === 0) {
+            res.status(400).json({ message: 'Mã OTP không tồn tại hoặc đã được sử dụng. Vui lòng yêu cầu mã mới.' });
+            return;
+        }
+
+        const resetRequest = rows[0];
+        if (Number(resetRequest.attempts) >= MAX_OTP_ATTEMPTS) {
+            res.status(400).json({ message: 'Bạn đã nhập sai OTP quá số lần cho phép. Vui lòng yêu cầu mã mới.' });
+            return;
+        }
+
+        if (new Date(resetRequest.expires_at).getTime() <= Date.now()) {
+            res.status(400).json({ message: 'Mã OTP đã hết hạn. Vui lòng yêu cầu mã mới.' });
+            return;
+        }
+
+        if (hashOtp(otp) !== resetRequest.otp_hash) {
+            await pool.query('UPDATE password_reset_otps SET attempts = attempts + 1 WHERE id = ?', [resetRequest.otp_id]);
+            res.status(400).json({ message: 'Mã OTP không chính xác.' });
+            return;
+        }
+
+        const passwordHash = await bcrypt.hash(newPassword, 12);
+        const connection = await pool.getConnection();
+        try {
+            await connection.beginTransaction();
+            await connection.query('UPDATE users SET password_hash = ? WHERE id = ?', [passwordHash, resetRequest.id]);
+            await connection.query('UPDATE password_reset_otps SET used_at = NOW() WHERE id = ?', [resetRequest.otp_id]);
+            await connection.commit();
+        } catch (error) {
+            await connection.rollback();
+            throw error;
+        } finally {
+            connection.release();
+        }
+
+        const user = toAuthUser(resetRequest);
+        res.status(200).json({
+            message: 'Đổi mật khẩu thành công. Bạn đã được đăng nhập.',
+            token: createToken(user),
+            user
+        });
+    } catch (error) {
+        console.error('Lỗi đặt lại mật khẩu:', error);
+        res.status(500).json({ message: 'Không thể đặt lại mật khẩu lúc này.' });
     }
 };
 
@@ -142,7 +322,7 @@ export const getProfile = async (req: Request, res: Response): Promise<void> => 
             return;
         }
 
-        const [rows]: any = await pool.query('SELECT id, username, display_name, role, age_group, created_at FROM users WHERE id = ?', [req.user.id]);
+        const [rows]: any = await pool.query('SELECT id, username, email, display_name, role, age_group, created_at FROM users WHERE id = ?', [req.user.id]);
         if (rows.length === 0) {
             res.status(404).json({ message: 'Không tìm thấy người dùng' });
             return;
@@ -178,7 +358,7 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
         );
 
         const [rows]: any = await pool.query(
-            'SELECT id, username, display_name, role, age_group, created_at FROM users WHERE id = ?',
+            'SELECT id, username, email, display_name, role, age_group, created_at FROM users WHERE id = ?',
             [req.user.id]
         );
 
@@ -196,24 +376,14 @@ export const updateProfile = async (req: Request, res: Response): Promise<void> 
 export const getDemoToken = async (req: Request, res: Response): Promise<void> => {
     const { userId } = req.params;
     try {
-        const [rows]: any = await pool.query('SELECT id, username, display_name, role, age_group FROM users WHERE id = ?', [userId]);
+        const [rows]: any = await pool.query('SELECT id, username, email, display_name, role, age_group FROM users WHERE id = ?', [userId]);
         if (rows.length === 0) {
             res.status(404).json({ message: 'Tài khoản không tồn tại!' });
             return;
         }
 
         const user = rows[0];
-        const token = jwt.sign(
-            {
-                id: user.id,
-                username: user.username,
-                display_name: user.display_name,
-                role: user.role,
-                age_group: user.age_group
-            },
-            JWT_SECRET,
-            { expiresIn: '7d' }
-        );
+        const token = createToken(user);
 
         res.status(200).json({ token, user });
     } catch (error) {
@@ -242,20 +412,10 @@ export const updatePlacementLevel = async (req: Request, res: Response): Promise
             [targetId]
         );
 
-        const [rows]: any = await pool.query('SELECT id, username, display_name, role, age_group FROM users WHERE id = ?', [targetId]);
+        const [rows]: any = await pool.query('SELECT id, username, email, display_name, role, age_group FROM users WHERE id = ?', [targetId]);
         const user = rows[0];
 
-        const token = jwt.sign(
-            {
-                id: user.id,
-                username: user.username,
-                display_name: user.display_name,
-                role: user.role,
-                age_group: user.age_group
-            },
-            JWT_SECRET,
-            { expiresIn: '7d' }
-        );
+        const token = createToken(user);
 
         res.status(200).json({
             message: 'Đã hoàn thành khảo sát và xếp lớp thành công cho bé!',

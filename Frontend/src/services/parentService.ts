@@ -19,6 +19,7 @@ export const parentService = {
   createChild: async (data: {
     displayName: string;
     username: string;
+    email: string;
     password: string;
     ageGroup?: string;
     relationship?: string;

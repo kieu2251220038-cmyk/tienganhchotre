@@ -104,6 +104,7 @@ export default function DuolingoOnboarding() {
   // Step 3: Tạo hồ sơ bé
   const [childAge, setChildAge] = useState<string>('5');
   const [displayName, setDisplayName] = useState<string>('Bé Bắp');
+  const [email, setEmail] = useState<string>('');
   const [username, setUsername] = useState<string>('bebap2026');
   const [password, setPassword] = useState<string>('123456');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -235,6 +236,10 @@ export default function DuolingoOnboarding() {
     sounds.playClick();
     setErrorMsg('');
 
+    if (!email.trim()) {
+      setErrorMsg('Vui lòng nhập email của phụ huynh để có thể lấy lại mật khẩu khi cần!');
+      return;
+    }
     if (!displayName.trim()) {
       setErrorMsg('Vui lòng nhập tên gọi thân mật của bé!');
       return;
@@ -252,6 +257,7 @@ export default function DuolingoOnboarding() {
     try {
       // 1. Đăng ký tài khoản người dùng vào Backend MySQL
       await authService.register(
+        email.trim(),
         username.trim(),
         password.trim(),
         displayName.trim(),
@@ -1042,7 +1048,41 @@ export default function DuolingoOnboarding() {
               />
             </div>
 
-            {/* 3. Tên đăng nhập & Mật khẩu */}
+            {/* 3. Email phụ huynh */}
+            <div>
+              <label style={{
+                fontFamily: 'Fredoka, sans-serif',
+                fontSize: '15px',
+                fontWeight: 800,
+                color: '#1E293B',
+                display: 'block',
+                marginBottom: '6px'
+              }}>
+                📧 Email phụ huynh (dùng để đăng nhập và nhận OTP):
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Ví dụ: phuhuynh@example.com"
+                required
+                autoComplete="email"
+                style={{
+                  width: '100%',
+                  padding: '14px 18px',
+                  borderRadius: '16px',
+                  border: '2.5px solid #CBD5E1',
+                  fontFamily: 'Fredoka, sans-serif',
+                  fontSize: '16px',
+                  fontWeight: 700,
+                  color: '#0F172A',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            {/* 4. Tên đăng nhập & Mật khẩu */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
               <div>
                 <label style={{

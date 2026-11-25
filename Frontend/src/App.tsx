@@ -26,6 +26,7 @@ import Register from './pages/auth/Register';
 import AdminLogin from './pages/auth/AdminLogin';
 import ParentLogin from './pages/auth/ParentLogin';
 import ExpertLogin from './pages/auth/ExpertLogin';
+import ForgotPassword from './pages/auth/ForgotPassword';
 
 // Admin Pages (A01 - A07)
 import AdminDashboard from './pages/admin/Dashboard';
@@ -85,6 +86,7 @@ function App() {
         {/* U10: Đăng nhập & Đăng ký cho Học sinh / Bé */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* ================= DEDICATED LOGIN PORTALS FOR EACH ROLE ================= */}
         <Route path="/admin/login" element={<AdminLogin />} />

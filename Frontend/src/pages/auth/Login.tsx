@@ -90,14 +90,16 @@ export default function Login() {
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
           <div>
             <label style={{ display: 'block', fontFamily: 'Fredoka, sans-serif', fontSize: '15px', fontWeight: 700, color: '#334155', marginBottom: '6px' }}>
-              Tên đăng nhập hoặc Email
+              Email đăng nhập
             </label>
             <input
               type="text"
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Nhập tên đăng nhập"
+              placeholder="Nhập email của bạn"
+              inputMode="email"
+              autoComplete="email"
               style={{
                 width: '100%',
                 padding: '14px 16px',
@@ -137,9 +139,9 @@ export default function Login() {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <span style={{ fontSize: '13px', color: '#2563EB', fontWeight: 700, cursor: 'pointer' }}>
+            <Link to="/forgot-password" style={{ fontSize: '13px', color: '#2563EB', fontWeight: 700, textDecoration: 'none' }}>
               Quên mật khẩu?
-            </span>
+            </Link>
           </div>
 
           <button

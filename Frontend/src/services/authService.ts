@@ -35,9 +35,9 @@ export const authService = {
     }
   },
 
-  async login(username: string, password: string): Promise<User> {
+  async login(identifier: string, password: string): Promise<User> {
     try {
-      const res = await API.post('/auth/login', { username, password });
+      const res = await API.post('/auth/login', { identifier, password });
       if (res.data && res.data.user) {
         this.setCurrentUser(res.data.user, res.data.token);
         return res.data.user;
@@ -63,9 +63,9 @@ export const authService = {
     return res.data.user;
   },
 
-  async register(username: string, password: string, displayName: string, ageGroup: string = '5', dailyGoalMinutes: number = 10): Promise<User> {
+  async register(email: string, username: string, password: string, displayName: string, ageGroup: string = '5', dailyGoalMinutes: number = 10): Promise<User> {
     try {
-      const res = await API.post('/auth/register', { username, password, displayName, ageGroup, dailyGoalMinutes });
+      const res = await API.post('/auth/register', { email, username, password, displayName, ageGroup, dailyGoalMinutes });
       if (res.data && res.data.token && res.data.user) {
         this.setCurrentUser(res.data.user, res.data.token);
         return res.data.user;
@@ -74,6 +74,29 @@ export const authService = {
     } catch (err: unknown) {
       const errorMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       throw new Error(errorMsg || 'Đăng ký không thành công');
+    }
+  },
+
+  async requestPasswordReset(email: string): Promise<void> {
+    try {
+      await API.post('/auth/forgot-password/request-otp', { email });
+    } catch (err: unknown) {
+      const errorMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      throw new Error(errorMsg || 'Không thể gửi mã OTP');
+    }
+  },
+
+  async resetPassword(email: string, otp: string, newPassword: string): Promise<User> {
+    try {
+      const res = await API.post('/auth/forgot-password/reset', { email, otp, newPassword });
+      if (res.data?.token && res.data?.user) {
+        this.setCurrentUser(res.data.user, res.data.token);
+        return res.data.user;
+      }
+      throw new Error('Dữ liệu đặt lại mật khẩu không hợp lệ');
+    } catch (err: unknown) {
+      const errorMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      throw new Error(errorMsg || 'Không thể đặt lại mật khẩu');
     }
   },
 

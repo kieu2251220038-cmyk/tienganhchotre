@@ -118,7 +118,8 @@ export const linkChild = async (req: Request, res: Response): Promise<void> => {
 export const createChild = async (req: Request, res: Response): Promise<void> => {
     try {
         const parentId = req.user!.id;
-        const { displayName, username, password, relationship = 'Con' } = req.body;
+        const { displayName, username, password, email: rawEmail, relationship = 'Con' } = req.body;
+        const email = typeof rawEmail === 'string' ? rawEmail.trim().toLowerCase() : '';
         const ageGroup = normalizeAge(req.body.ageGroup ?? '3');
 
         if (!ageGroup) {
@@ -126,27 +127,33 @@ export const createChild = async (req: Request, res: Response): Promise<void> =>
             return;
         }
 
-        if (!displayName || !username || !password) {
-            res.status(400).json({ message: 'Vui lòng điền đầy đủ tên bé, tên đăng nhập và mật khẩu!' });
+        if (!displayName || !username || !password || !email) {
+            res.status(400).json({ message: 'Vui lòng điền đầy đủ email, tên bé, tên đăng nhập và mật khẩu!' });
             return;
         }
 
-        // Kiểm tra xem username đã tồn tại chưa
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            res.status(400).json({ message: 'Địa chỉ email của bé không hợp lệ!' });
+            return;
+        }
+
+        // Kiểm tra username hoặc email đã tồn tại chưa
         const [existing]: any = await pool.query(
-            'SELECT id FROM users WHERE username = ?',
-            [username]
+            'SELECT id, username, email FROM users WHERE username = ? OR LOWER(email) = LOWER(?)',
+            [username, email]
         );
 
         if (existing.length > 0) {
-            res.status(400).json({ message: 'Tên đăng nhập này đã được sử dụng. Vui lòng chọn tên khác!' });
+            const emailExists = existing.some((user: any) => user.email && String(user.email).toLowerCase() === email);
+            res.status(400).json({ message: emailExists ? 'Email này đã được sử dụng. Vui lòng chọn email khác!' : 'Tên đăng nhập này đã được sử dụng. Vui lòng chọn tên khác!' });
             return;
         }
 
         // Tạo tài khoản trẻ
         const [userResult]: any = await pool.query(
-            `INSERT INTO users (username, password_hash, display_name, role, age_group, parent_id, daily_goal_minutes)
-             VALUES (?, ?, ?, 'USER', ?, ?, 15)`,
-            [username, password, displayName, ageGroup, parentId]
+            `INSERT INTO users (username, email, password_hash, display_name, role, age_group, parent_id, daily_goal_minutes)
+             VALUES (?, ?, ?, ?, 'USER', ?, ?, 15)`,
+            [username, email, password, displayName, ageGroup, parentId]
         );
 
         const newChildId = userResult.insertId;
@@ -170,6 +177,7 @@ export const createChild = async (req: Request, res: Response): Promise<void> =>
             child: {
                 id: newChildId,
                 username,
+                email,
                 display_name: displayName,
                 age_group: ageGroup,
                 relationship

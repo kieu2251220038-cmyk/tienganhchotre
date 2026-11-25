@@ -7,6 +7,7 @@ interface RegisterProps {
 }
 
 export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterSuccess }) => {
+  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -17,6 +18,7 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
     e.preventDefault();
     try {
       const res = await API.post('/auth/register', { 
+        email,
         username, 
         password, 
         displayName 
@@ -49,6 +51,15 @@ export const Register: React.FC<RegisterProps> = ({ onSwitchToLogin, onRegisterS
       <p style={{ color: '#6B7280', fontSize: '14px', marginBottom: '20px' }}>Tạo tài khoản mới để bắt đầu học nhé!</p>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        <input
+          type="email"
+          placeholder="Email để đăng nhập và nhận mã OTP"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          autoComplete="email"
+          style={{ padding: '12px', borderRadius: '8px', border: '1px solid #D1D5DB', fontSize: '14px' }}
+        />
         <input 
           type="text" 
           placeholder="Tên của bé (ví dụ: Bé Minh)" 

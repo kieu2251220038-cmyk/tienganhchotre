@@ -3,6 +3,7 @@ export type UserRole = 'USER' | 'ADMIN' | 'EXPERT' | 'PARENT';
 export interface User {
   id: number;
   username: string;
+  email?: string | null;
   display_name: string;
   role: UserRole;
   age_group?: '3' | '4' | '5' | '6' | '7' | '8' | string;

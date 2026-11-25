@@ -45,7 +45,8 @@ export default function Users() {
 
   const filteredUsers = users.filter((u) => {
     const matchSearch = u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (u.display_name && u.display_name.toLowerCase().includes(searchTerm.toLowerCase()));
+      (u.display_name && u.display_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (u.email && u.email.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchRole = roleFilter === 'ALL' || u.role === roleFilter;
     return matchSearch && matchRole;
   });
@@ -143,6 +144,7 @@ export default function Users() {
               <th style={{ padding: '14px 20px', color: '#475569', fontWeight: 700 }}>ID</th>
               <th style={{ padding: '14px 20px', color: '#475569', fontWeight: 700 }}>Tên Bé / Hiển Thị</th>
               <th style={{ padding: '14px 20px', color: '#475569', fontWeight: 700 }}>Username</th>
+              <th style={{ padding: '14px 20px', color: '#475569', fontWeight: 700 }}>Email</th>
               <th style={{ padding: '14px 20px', color: '#475569', fontWeight: 700 }}>Độ Tuổi</th>
               <th style={{ padding: '14px 20px', color: '#475569', fontWeight: 700 }}>Vai Trò</th>
               <th style={{ padding: '14px 20px', color: '#475569', fontWeight: 700 }}>Ngày Tạo</th>
@@ -158,6 +160,9 @@ export default function Users() {
                 </td>
                 <td style={{ padding: '14px 20px', color: '#334155' }}>
                   <code>{u.username}</code>
+                </td>
+                <td style={{ padding: '14px 20px', color: '#334155', fontSize: '13px' }}>
+                  {u.email || 'Chưa cập nhật'}
                 </td>
                 <td style={{ padding: '14px 20px' }}>
                   <span style={{
@@ -249,6 +254,19 @@ export default function Users() {
             </h3>
 
             <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
+                  Email đăng nhập / nhận OTP:
+                </label>
+                <input
+                  type="email"
+                  value={editingUser.email || ''}
+                  onChange={(e) => setEditingUser({ ...editingUser, email: e.target.value })}
+                  placeholder="user@example.com"
+                  style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #CBD5E1', boxSizing: 'border-box' }}
+                />
+              </div>
+
               <div>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
                   Tên hiển thị:

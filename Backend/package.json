@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
+    "migrate:auth-email": "node scripts/migrate_auth_email_otp.js",
     "seed:curriculum": "node scripts/seed_full_curriculum.js",
     "seed:curriculum:user": "node scripts/seed_requested_curriculum.js",
     "check:curriculum:user": "node scripts/check_age_curriculum.js",
@@ -23,6 +24,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "@types/nodemailer": "^8.0.2",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^18.0.7",
@@ -30,6 +32,7 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.5.0",
     "mysql2": "^3.24.5",
+    "nodemailer": "^10.6.1",
     "openai": "^7.52.0"
   },
   "devDependencies": {

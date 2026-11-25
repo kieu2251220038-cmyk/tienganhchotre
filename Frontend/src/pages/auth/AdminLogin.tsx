@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import { sounds } from '../../utils/soundEffects';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
-  const [username, setUsername] = useState('admin');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('123456');
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
@@ -82,14 +82,16 @@ export default function AdminLogin() {
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#CBD5E1', marginBottom: '6px' }}>
-              Tài khoản quản trị (Username)
+              Email quản trị
             </label>
             <input
               type="text"
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="admin"
+              placeholder="admin@example.com"
+              inputMode="email"
+              autoComplete="email"
               style={{
                 width: '100%',
                 padding: '12px 14px',
@@ -126,6 +128,12 @@ export default function AdminLogin() {
                 boxSizing: 'border-box'
               }}
             />
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '-6px' }}>
+            <Link to="/forgot-password?role=ADMIN" style={{ color: '#7DD3FC', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
+              Quên mật khẩu?
+            </Link>
           </div>
 
           <button

@@ -43,6 +43,7 @@ export default function ParentDashboard() {
   // Modal tạo hồ sơ con mới trực tiếp từ tài khoản phụ huynh
   const [createModalOpen, setCreateModalOpen] = useState<boolean>(false);
   const [createDisplayName, setCreateDisplayName] = useState<string>('');
+  const [createEmail, setCreateEmail] = useState<string>('');
   const [createUsername, setCreateUsername] = useState<string>('');
   const [createPassword, setCreatePassword] = useState<string>('123456');
   const [createAgeGroup, setCreateAgeGroup] = useState<string>('3');
@@ -121,6 +122,7 @@ export default function ParentDashboard() {
     try {
       const res = await parentService.createChild({
         displayName: createDisplayName,
+        email: createEmail,
         username: createUsername,
         password: createPassword,
         ageGroup: createAgeGroup,
@@ -130,6 +132,7 @@ export default function ParentDashboard() {
       showToast(res.message || '✓ Tạo hồ sơ bé mới thành công!');
       setCreateModalOpen(false);
       setCreateDisplayName('');
+      setCreateEmail('');
       setCreateUsername('');
       await loadParentData();
       if (res.child?.id) {
@@ -1422,6 +1425,29 @@ export default function ParentDashboard() {
                   value={createDisplayName}
                   onChange={(e) => setCreateDisplayName(e.target.value)}
                   placeholder="Ví dụ: Bé Bắp, Bé Sam, Bé Cherry..."
+                  style={{
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '12px',
+                    border: '1.5px solid #A7F3D0',
+                    fontSize: '14px',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: '#064E3B', marginBottom: '4px' }}>
+                  Email đăng nhập và nhận mã OTP
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={createEmail}
+                  onChange={(e) => setCreateEmail(e.target.value)}
+                  placeholder="be@example.com"
+                  autoComplete="email"
                   style={{
                     width: '100%',
                     padding: '10px 14px',

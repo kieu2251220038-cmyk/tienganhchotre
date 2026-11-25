@@ -5,7 +5,7 @@ import { sounds } from '../../utils/soundEffects';
 
 export default function ExpertLogin() {
   const navigate = useNavigate();
-  const [username, setUsername] = useState('chuyengia_minhanh');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('123456');
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
@@ -93,14 +93,16 @@ export default function ExpertLogin() {
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: '#3B0764', marginBottom: '6px' }}>
-              Tên tài khoản Chuyên gia
+              Email chuyên gia
             </label>
             <input
               type="text"
               required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="chuyengia_minhanh"
+              placeholder="chuyengia@example.com"
+              inputMode="email"
+              autoComplete="email"
               style={{
                 width: '100%',
                 padding: '13px 16px',
@@ -141,19 +143,6 @@ export default function ExpertLogin() {
             />
           </div>
 
-          {/* Gợi ý tài khoản mẫu */}
-          <div style={{
-            backgroundColor: '#FAF5FF',
-            border: '1.5px dashed #A855F7',
-            borderRadius: '12px',
-            padding: '10px 14px',
-            fontSize: '12.5px',
-            color: '#6B21A8',
-            fontWeight: 600
-          }}>
-            💡 Tài khoản mẫu: <code>chuyengia_minhanh</code> / mật khẩu: <code>123456</code> (TS. Minh Anh)
-          </div>
-
           <button
             type="submit"
             disabled={loading}
@@ -175,6 +164,12 @@ export default function ExpertLogin() {
             {loading ? 'Đang Đăng Nhập...' : '📚 Vào Cổng Thẩm Định Sư Phạm'}
           </button>
         </form>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '14px' }}>
+          <Link to="/forgot-password?role=EXPERT" style={{ color: '#7E22CE', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
+            Quên mật khẩu?
+          </Link>
+        </div>
 
         {/* Chuyển hướng các cổng khác */}
         <div style={{
