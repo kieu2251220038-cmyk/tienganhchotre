@@ -13,13 +13,21 @@ export default function KidsLayout() {
 
   // Modal xác thực an toàn trước khi vào khu vực phụ huynh
   const [parentGateOpen, setParentGateOpen] = useState(false);
-  const [gateUsername, setGateUsername] = useState('phuhuynh_huong');
-  const [gatePassword, setGatePassword] = useState('123456');
+  const [gateUsername, setGateUsername] = useState('');
+  const [gatePassword, setGatePassword] = useState('');
   const [gateError, setGateError] = useState('');
   const [gateLoading, setGateLoading] = useState(false);
 
   useEffect(() => {
     let mounted = true;
+    if (location.pathname === '/parent') {
+      setUser(null);
+      setRewards(null);
+      return () => {
+        mounted = false;
+      };
+    }
+
     const token = authService.getToken();
     if (!token) {
       if (mounted) {
@@ -59,7 +67,7 @@ export default function KidsLayout() {
 
   const handleGoToParent = () => {
     const currentUser = authService.getCurrentUser();
-    if (currentUser && (currentUser.role === 'PARENT' || currentUser.role === 'ADMIN')) {
+    if (currentUser && currentUser.role === 'PARENT') {
       navigate('/parent');
     } else {
       setGateError('');
@@ -73,7 +81,7 @@ export default function KidsLayout() {
     setGateLoading(true);
     try {
       const parent = await authService.login(gateUsername, gatePassword);
-      if (parent.role !== 'PARENT' && parent.role !== 'ADMIN') {
+      if (parent.role !== 'PARENT') {
         authService.logout();
         throw new Error('Tài khoản này không có quyền Phụ Huynh (PARENT)!');
       }
@@ -266,6 +274,31 @@ export default function KidsLayout() {
                 >
                   Đăng Xuất
                 </button>
+
+                {user.role === 'ADMIN' && (
+                  <Link
+                    to="/admin"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '7px 14px',
+                      backgroundColor: '#E0F2FE',
+                      borderRadius: '999px',
+                      textDecoration: 'none',
+                      color: '#0369A1',
+                      fontSize: '13px',
+                      fontWeight: 800,
+                      fontFamily: 'Fredoka, sans-serif',
+                      border: '1.5px solid #7DD3FC',
+                      boxShadow: '0 2px 0 #BAE6FD'
+                    }}
+                    title="Mở trang quản trị hệ thống"
+                  >
+                    <span style={{ fontSize: '22px', lineHeight: 1 }}>🛡️</span>
+                    <span>Trang quản trị</span>
+                  </Link>
+                )}
               </div>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -439,17 +472,6 @@ export default function KidsLayout() {
                     boxSizing: 'border-box'
                   }}
                 />
-              </div>
-
-              <div style={{
-                backgroundColor: '#FFF1F2',
-                border: '1px dashed #FB7185',
-                borderRadius: '10px',
-                padding: '8px 12px',
-                fontSize: '12px',
-                color: '#9F1239'
-              }}>
-                💡 Mẫu: <code>phuhuynh_huong</code> / pass: <code>123456</code> (Mẹ Thu Hương)
               </div>
 
               <div style={{ display: 'flex', gap: '10px', marginTop: '6px' }}>

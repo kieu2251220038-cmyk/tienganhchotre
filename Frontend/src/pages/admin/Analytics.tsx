@@ -78,7 +78,7 @@ export default function Analytics() {
       {/* Header */}
       <div>
         <h1 style={{ fontSize: '26px', color: '#0F172A', margin: 0, fontWeight: 800 }}>
-          📈 Báo Cáo & Thống Kê Hệ Thống (A09)
+          📈 Báo Cáo & Thống Kê Hệ Thống
         </h1>
         <p style={{ color: '#64748B', fontSize: '15px', marginTop: '4px' }}>
           Phân tích người dùng hoạt động, tỷ lệ hoàn thành và bài học phổ biến nhất

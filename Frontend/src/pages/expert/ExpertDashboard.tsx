@@ -45,7 +45,7 @@ export default function ExpertDashboard() {
       try {
         const u = authService.getCurrentUser();
         if (!u || (u.role !== 'EXPERT' && u.role !== 'ADMIN')) {
-          navigate('/expert/login', { replace: true });
+          navigate('/login', { replace: true });
           return;
         }
         setExpertUser(u);
@@ -152,16 +152,6 @@ export default function ExpertDashboard() {
               <h1 style={{ fontFamily: 'Fredoka, sans-serif', fontSize: '20px', fontWeight: 800, color: '#581C87', margin: 0 }}>
                 Cổng Kiểm Định Sư Phạm - Hội Đồng Chuyên Gia
               </h1>
-              <span style={{
-                backgroundColor: '#F3E8FF',
-                color: '#7E22CE',
-                padding: '2px 8px',
-                borderRadius: '999px',
-                fontSize: '11px',
-                fontWeight: 800
-              }}>
-                EXPERT
-              </span>
             </div>
             <p style={{ fontSize: '13px', color: '#6D28D9', margin: '4px 0 0', fontWeight: 600 }}>
               Xin chào {expertUser?.display_name || 'Chuyên gia'}! Thẩm định nội dung và phê duyệt bài học chuẩn hóa cho trẻ 3-8 tuổi.
@@ -209,7 +199,7 @@ export default function ExpertDashboard() {
           <button
             onClick={() => {
               authService.logout();
-              navigate('/expert/login');
+              navigate('/login');
             }}
             style={{
               padding: '8px 16px',

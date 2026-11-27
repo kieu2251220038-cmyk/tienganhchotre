@@ -16,7 +16,7 @@ export default function AdminLayout() {
         if (!mounted) return;
         if (u.role !== 'ADMIN') {
           authService.logout();
-          navigate('/admin/login', { replace: true });
+          navigate('/login', { replace: true });
           return;
         }
         setAdminUser(u);
@@ -25,7 +25,7 @@ export default function AdminLayout() {
       .catch(() => {
         if (!mounted) return;
         authService.logout();
-        navigate('/admin/login', { replace: true });
+        navigate('/login', { replace: true });
       });
 
     return () => {
@@ -150,7 +150,7 @@ export default function AdminLayout() {
           <button
             onClick={() => {
               authService.logout();
-              navigate('/admin/login');
+              navigate('/login');
             }}
             style={{
               display: 'flex',
@@ -232,7 +232,7 @@ export default function AdminLayout() {
             <button
               onClick={() => {
                 authService.logout();
-                navigate('/admin/login');
+                navigate('/login');
               }}
               style={{
                 padding: '6px 14px',

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { adminService, getAdminErrorMessage, type AdminTopic } from '../../services/adminService';
 import {
   adminMiniGameService,
@@ -63,6 +63,7 @@ export default function MiniGameManager() {
   const [topics, setTopics] = useState<AdminTopic[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingGame, setEditingGame] = useState<MiniGame | null>(null);
   const [form, setForm] = useState<GameForm>(emptyForm());
@@ -152,14 +153,29 @@ export default function MiniGameManager() {
   const activeCount = games.filter(isActive).length;
   const selectableTopics = topics;
 
+  const filteredGames = useMemo(() => {
+    const keyword = searchTerm.trim().toLocaleLowerCase();
+    if (!keyword) return games;
+
+    return games.filter((game) => {
+      const type = GAME_TYPES.find((item) => item.value === game.game_type);
+      return [
+        game.name,
+        game.topic_name,
+        game.course_title,
+        game.game_type,
+        type?.label,
+        getStageLabel(game),
+        String(game.id)
+      ].some((value) => String(value || '').toLocaleLowerCase().includes(keyword));
+    });
+  }, [games, searchTerm]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '26px', color: '#0F172A', margin: 0, fontWeight: 800 }}>🎮 Quản Lý Mini Game (A06)</h1>
-          <p style={{ color: '#64748B', fontSize: '15px', margin: '4px 0 0' }}>
-            Cấu hình lưu trong CSDL và tự hiển thị theo Chủ đề/Bậc tuổi của bé.
-          </p>
+          <h1 style={{ fontSize: '26px', color: '#0F172A', margin: 0, fontWeight: 800 }}>🎮 Quản Lý Mini Game</h1>
         </div>
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
           <span style={{ background: '#DCFCE7', color: '#166534', borderRadius: '999px', padding: '8px 12px', fontWeight: 800, fontSize: '13px' }}>
@@ -177,13 +193,33 @@ export default function MiniGameManager() {
         </div>
       )}
 
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', flex: '1 1 360px' }}>
+          <span aria-hidden="true" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '19px' }}>🔎</span>
+          <input
+            type="search"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Tìm mini game, chủ đề hoặc loại game..."
+            aria-label="Tìm kiếm mini game"
+            style={{ width: '100%', boxSizing: 'border-box', padding: '13px 42px', borderRadius: '14px', border: '2px solid #BFDBFE', background: '#FFFFFF', color: '#0F172A', fontSize: '15px', outline: 'none' }}
+          />
+          {searchTerm && (
+            <button type="button" onClick={() => setSearchTerm('')} aria-label="Xóa tìm kiếm" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'transparent', color: '#64748B', fontSize: '22px', cursor: 'pointer', lineHeight: 1 }}>×</button>
+          )}
+        </div>
+        <span style={{ color: '#64748B', fontWeight: 700, fontSize: '14px' }}>{filteredGames.length}/{games.length} mini game</span>
+      </div>
+
       {loading ? (
         <div style={{ padding: '48px', textAlign: 'center', background: '#FFF', borderRadius: '16px', color: '#64748B', fontWeight: 700 }}>Đang tải mini game từ CSDL...</div>
       ) : games.length === 0 ? (
         <div style={{ padding: '48px', textAlign: 'center', background: '#FFF', borderRadius: '16px', color: '#64748B', fontWeight: 700 }}>Chưa có mini game nào. Hãy tạo game đầu tiên.</div>
+      ) : filteredGames.length === 0 ? (
+        <div style={{ padding: '48px', textAlign: 'center', background: '#FFF', borderRadius: '16px', color: '#64748B', fontWeight: 700 }}>Không tìm thấy mini game phù hợp.</div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(310px, 1fr))', gap: '20px' }}>
-          {games.map((game) => {
+          {filteredGames.map((game) => {
             const type = GAME_TYPES.find((item) => item.value === game.game_type) || GAME_TYPES[0];
             const enabled = isActive(game);
             return (

@@ -34,7 +34,7 @@ export default function Home() {
       padding: '24px 16px'
     }}>
       {/* Khối Onboarding Duolingo duy nhất khi mới vào trang web */}
-      <div style={{ width: '100%', maxWidth: '900px' }}>
+      <div style={{ width: '100%', maxWidth: '1040px' }}>
         <DuolingoOnboarding />
       </div>
     </div>

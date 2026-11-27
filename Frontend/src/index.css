@@ -1124,6 +1124,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .classic-stage-parts { display: flex; flex-wrap: wrap; gap: 5px; }
 .classic-stage-parts span { padding: 4px 7px; border-radius: 7px; background: #eafbf1; color: #08784e; font-size: 10px; font-weight: 900; white-space: nowrap; }
+.classic-stage-parts .classic-stage-part-icon { display: inline-block; padding: 0; margin-right: 3px; background: transparent; color: inherit; font-size: 22px; line-height: 1; vertical-align: -5px; }
 .classic-stage-parts span.is-disabled { background: #f2f4f6; color: #a3afbb; }
 .classic-stage-parts.has-interactive-access span.is-disabled { background: #eafbf1; color: #08784e; }
 .classic-stage-parts.has-interactive-access span { cursor: pointer; }
@@ -1177,6 +1178,29 @@ h1, h2, h3, h4, h5, h6 {
 .classic-locked-card { border-color: #b7efca; background: #f4fff8; }
 .classic-locked-card h2 { color: #08784e; }
 .classic-locked-card p { margin: 0; color: #237b59; }
+
+.placement-options-grid {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 4px 2px 12px;
+  scrollbar-width: thin;
+  scrollbar-color: #93c5fd #e0f2fe;
+}
+
+.placement-options-grid::-webkit-scrollbar { height: 8px; }
+.placement-options-grid::-webkit-scrollbar-track { background: #e0f2fe; border-radius: 999px; }
+.placement-options-grid::-webkit-scrollbar-thumb { background: #93c5fd; border-radius: 999px; }
+
+.placement-options-grid > button {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .placement-options-grid > button { flex: 0 0 235px; }
+}
 
 @media (max-width: 1050px) {
   .classic-roadmap-layout { grid-template-columns: minmax(0, 1fr); }

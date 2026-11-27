@@ -17,9 +17,14 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await authService.login(username, password);
+      const user = await authService.login(username.trim(), password);
       sounds.playVictory();
-      navigate('/dashboard');
+      const destination = user.role === 'PARENT'
+          ? '/parent'
+          : user.role === 'EXPERT'
+            ? '/expert'
+            : '/dashboard';
+      navigate(destination);
     } catch (err: unknown) {
       sounds.playWrong();
       setErrorMsg((err as Error).message || 'Tên đăng nhập hoặc mật khẩu chưa đúng!');
@@ -69,7 +74,7 @@ export default function Login() {
           Đăng Nhập 🔑
         </h1>
         <p style={{ fontSize: '14px', color: '#64748B', fontWeight: 600, marginBottom: '24px' }}>
-          Nhập thông tin tài khoản của ba mẹ hoặc bé
+          Một cổng đăng nhập cho bé, phụ huynh, quản trị viên và chuyên gia. Hệ thống sẽ tự chuyển đúng trang.
         </p>
 
         {errorMsg && (
@@ -158,6 +163,13 @@ export default function Login() {
           Chưa có tài khoản bé yêu?{' '}
           <Link to="/register" style={{ color: '#2563EB', fontWeight: 800, textDecoration: 'none' }}>
             Đăng ký ngay ➔
+          </Link>
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '14px', color: '#64748B', fontWeight: 600 }}>
+          Là phụ huynh?{' '}
+          <Link to="/parent/register" style={{ color: '#BE123C', fontWeight: 800, textDecoration: 'none' }}>
+            Đăng ký tài khoản phụ huynh
           </Link>
         </div>
 

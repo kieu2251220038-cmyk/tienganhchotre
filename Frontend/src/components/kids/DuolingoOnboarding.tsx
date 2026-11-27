@@ -5,11 +5,18 @@ import { authService } from '../../services/authService';
 import { userDataService } from '../../services/userDataService';
 import { placementService } from '../../services/placementService';
 import { getVocabularyDisplayImage } from '../../utils/vocabularyVisuals';
+import bookImage from '../../assets/vocabulary/book.png';
+import storyImage from '../../assets/vocabulary/story.png';
+import headImage from '../../assets/vocabulary/head.png';
+import helloImage from '../../assets/vocabulary/hello.png';
+import toyBallImage from '../../assets/vocabulary/toy-ball.png';
 
 // ================= TYPES & INTERFACES =================
 export interface LearningGoal {
   id: string;
   emoji: string;
+  image: string;
+  shortDesc: string;
   title: string;
   desc: string;
   badge?: string;
@@ -19,6 +26,7 @@ export interface DailyGoalOption {
   minutes: number;
   label: string;
   subLabel: string;
+  shortSubLabel: string;
   badgeColor: string;
 }
 
@@ -28,6 +36,7 @@ export interface PlacementQuestion {
   promptEn: string;
   speakText: string;
   image: string;
+  hint?: string;
   options: {
     text: string;
     subText: string;
@@ -40,6 +49,8 @@ export interface PlacementQuestion {
 const LEARNING_GOALS: LearningGoal[] = [
   {
     id: 'grade_1',
+    image: bookImage,
+    shortDesc: 'Chữ cái • từ vựng cơ bản',
     emoji: '🎓',
     title: 'Chuẩn bị vào lớp 1 & Đạt điểm cao',
     desc: 'Xây nền tảng phát âm bảng chữ cái A-B-C và từ vựng trường lớp chuẩn quốc tế.',
@@ -47,6 +58,8 @@ const LEARNING_GOALS: LearningGoal[] = [
   },
   {
     id: 'cartoons',
+    image: storyImage,
+    shortDesc: 'Phim, nhạc và câu chuyện',
     emoji: '🎬',
     title: 'Xem phim hoạt hình & Nghe nhạc thiếu nhi',
     desc: 'Hiểu trọn vẹn Peppa Pig, Frozen, Disney mà không cần ba mẹ dịch nghĩa.',
@@ -54,6 +67,8 @@ const LEARNING_GOALS: LearningGoal[] = [
   },
   {
     id: 'brain_power',
+    image: headImage,
+    shortDesc: 'Tư duy và phản xạ ngôn ngữ',
     emoji: '🧠',
     title: 'Kích thích trí tuệ & Tư duy ngôn ngữ',
     desc: 'Kích hoạt vùng não ngôn ngữ trong "giai đoạn vàng" 3 – 8 tuổi của bé.',
@@ -61,12 +76,16 @@ const LEARNING_GOALS: LearningGoal[] = [
   },
   {
     id: 'confidence',
+    image: helloImage,
+    shortDesc: 'Nói tự nhiên, tự tin hơn',
     emoji: '🌍',
     title: 'Tự tin kết bạn & Giao tiếp quốc tế',
     desc: 'Nói tiếng Anh tự nhiên, phản xạ nhanh và dạn dĩ khi gặp người nước ngoài.'
   },
   {
     id: 'play_and_learn',
+    image: toyBallImage,
+    shortDesc: 'Flashcard, game và khám phá',
     emoji: '🎮',
     title: 'Vừa chơi vừa học, khám phá thế giới',
     desc: 'Học vui nhộn qua flashcard, minigame, tích lũy sao mở rương kho báu.'
@@ -75,10 +94,10 @@ const LEARNING_GOALS: LearningGoal[] = [
 
 // Cam kết thời gian hàng ngày
 const DAILY_GOALS: DailyGoalOption[] = [
-  { minutes: 5, label: '5 phút / ngày', subLabel: 'Dễ dàng (Khởi động nhẹ nhàng)', badgeColor: '#10B981' },
-  { minutes: 10, label: '10 phút / ngày', subLabel: 'Vừa sức (Được khuyên dùng ⭐)', badgeColor: '#3B82F6' },
-  { minutes: 15, label: '15 phút / ngày', subLabel: 'Chăm chỉ (Tiến bộ vượt trội)', badgeColor: '#F59E0B' },
-  { minutes: 20, label: '20 phút / ngày', subLabel: 'Siêu nhí (Bứt phá thần tốc)', badgeColor: '#EF4444' }
+  { minutes: 5, label: '5 phút / ngày', shortSubLabel: 'Nhẹ nhàng', subLabel: 'Dễ dàng (Khởi động nhẹ nhàng)', badgeColor: '#10B981' },
+  { minutes: 10, label: '10 phút / ngày', shortSubLabel: 'Khuyên dùng ⭐', subLabel: 'Vừa sức (Được khuyên dùng ⭐)', badgeColor: '#3B82F6' },
+  { minutes: 15, label: '15 phút / ngày', shortSubLabel: 'Chăm chỉ', subLabel: 'Chăm chỉ (Tiến bộ vượt trội)', badgeColor: '#F59E0B' },
+  { minutes: 20, label: '20 phút / ngày', shortSubLabel: 'Bứt phá', subLabel: 'Siêu nhí (Bứt phá thần tốc)', badgeColor: '#EF4444' }
 ];
 
 // 4 Câu hỏi bài mồi sinh động
@@ -104,7 +123,8 @@ export default function DuolingoOnboarding() {
   // Step 3: Tạo hồ sơ bé
   const [childAge, setChildAge] = useState<string>('5');
   const [displayName, setDisplayName] = useState<string>('Bé Bắp');
-  const [email, setEmail] = useState<string>('');
+  const [childEmail, setChildEmail] = useState<string>('');
+  const [parentEmail, setParentEmail] = useState<string>('');
   const [username, setUsername] = useState<string>('bebap2026');
   const [password, setPassword] = useState<string>('123456');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -236,8 +256,12 @@ export default function DuolingoOnboarding() {
     sounds.playClick();
     setErrorMsg('');
 
-    if (!email.trim()) {
-      setErrorMsg('Vui lòng nhập email của phụ huynh để có thể lấy lại mật khẩu khi cần!');
+    if (!childEmail.trim() || !parentEmail.trim()) {
+      setErrorMsg('Vui lòng nhập email riêng của bé và email phụ huynh!');
+      return;
+    }
+    if (childEmail.trim().toLowerCase() === parentEmail.trim().toLowerCase()) {
+      setErrorMsg('Email của bé và email phụ huynh phải là hai email khác nhau!');
       return;
     }
     if (!displayName.trim()) {
@@ -257,7 +281,8 @@ export default function DuolingoOnboarding() {
     try {
       // 1. Đăng ký tài khoản người dùng vào Backend MySQL
       await authService.register(
-        email.trim(),
+        childEmail.trim(),
+        parentEmail.trim(),
         username.trim(),
         password.trim(),
         displayName.trim(),
@@ -293,7 +318,7 @@ export default function DuolingoOnboarding() {
 
   return (
     <div style={{
-      maxWidth: '880px',
+      maxWidth: '1040px',
       margin: '0 auto',
       backgroundColor: '#FFFFFF',
       borderRadius: '32px',
@@ -366,7 +391,7 @@ export default function DuolingoOnboarding() {
             boxShadow: '0 2px 0 #E5E5E5'
           }}
         >
-          🔑 Tôi đã có tài khoản
+          🔑 Đã có tài khoản?
         </button>
       </div>
 
@@ -375,8 +400,8 @@ export default function DuolingoOnboarding() {
         <div style={{ padding: '36px 32px', display: 'flex', flexDirection: 'column', gap: '28px' }}>
           {/* Mascot Greeting */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            <div style={{ fontSize: '64px', lineHeight: 1 }} className="animate-bounce">
-              🦉
+            <div style={{ width: '118px', height: '118px', flex: '0 0 118px', borderRadius: '28px', overflow: 'hidden', boxShadow: '0 6px 0 #D8E9F5' }} className="animate-bounce">
+              <img src={helloImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
             </div>
             <div style={{
               backgroundColor: '#F7FEE7',
@@ -393,16 +418,16 @@ export default function DuolingoOnboarding() {
                 color: '#365314',
                 margin: '0 0 6px 0'
               }}>
-                Chào bé yêu và ba mẹ! Bạn muốn học tiếng Anh để làm gì nào? ✨
+                Bé muốn học để làm gì? ✨
               </h2>
               <p style={{ margin: 0, fontSize: '15px', color: '#4D7C0F', fontWeight: 600 }}>
-                Hãy chọn mục tiêu lớn nhất để Cú Xanh thiết kế bài mồi và lộ trình phù hợp nhất cho bé nhé!
+                Chọn một mục tiêu nhé!
               </p>
             </div>
           </div>
 
           {/* Goal Cards Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '18px' }}>
             {LEARNING_GOALS.map((goal) => {
               const isSelected = selectedGoal === goal.id;
               return (
@@ -422,7 +447,7 @@ export default function DuolingoOnboarding() {
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
-                    minHeight: '125px'
+                    minHeight: '350px'
                   }}
                 >
                   {goal.badge && (
@@ -440,24 +465,34 @@ export default function DuolingoOnboarding() {
                       {goal.badge}
                     </span>
                   )}
+                  <div style={{
+                    height: '210px',
+                    margin: '-2px -2px 16px',
+                    borderRadius: '16px',
+                    overflow: 'hidden',
+                    backgroundColor: isSelected ? '#DCFCE7' : '#F8FAFC'
+                  }}>
+                    <img
+                      src={goal.image}
+                      alt=""
+                      loading="lazy"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    />
+                  </div>
                   <div>
-                    <div style={{ fontSize: '32px', marginBottom: '8px' }}>{goal.emoji}</div>
                     <div style={{
                       fontFamily: 'Fredoka, sans-serif',
-                      fontSize: '16px',
+                      fontSize: '17px',
                       fontWeight: 800,
                       color: isSelected ? '#15803D' : '#1E293B',
                       marginBottom: '4px'
                     }}>
                       {goal.title}
                     </div>
-                    <div style={{ fontSize: '13px', color: '#64748B', lineHeight: 1.4, fontWeight: 500 }}>
-                      {goal.desc}
-                    </div>
                   </div>
                   {isSelected && (
                     <div style={{ marginTop: '10px', fontSize: '13px', fontWeight: 800, color: '#16A34A', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span>✓</span> Đã chọn mục tiêu này
+                      <span>✓</span> Đã chọn
                     </div>
                   )}
                 </div>
@@ -470,11 +505,11 @@ export default function DuolingoOnboarding() {
             backgroundColor: '#F8FAFC',
             border: '2px solid #E2E8F0',
             borderRadius: '20px',
-            padding: '20px 24px'
+            padding: '24px 28px'
           }}>
             <div style={{
               fontFamily: 'Fredoka, sans-serif',
-              fontSize: '17px',
+              fontSize: '22px',
               fontWeight: 800,
               color: '#0F172A',
               marginBottom: '12px',
@@ -482,7 +517,7 @@ export default function DuolingoOnboarding() {
               alignItems: 'center',
               gap: '8px'
             }}>
-              <span>⏱️</span> Mục tiêu luyện tập mỗi ngày của bé:
+              <span>⏱️</span> Mỗi ngày bé học bao lâu?
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
               {DAILY_GOALS.map((dg) => {
@@ -496,7 +531,8 @@ export default function DuolingoOnboarding() {
                       backgroundColor: isSelected ? '#FFFFFF' : '#F1F5F9',
                       border: isSelected ? `2.5px solid ${dg.badgeColor}` : '2px solid #CBD5E1',
                       borderRadius: '16px',
-                      padding: '12px 14px',
+                      minHeight: '82px',
+                      padding: '16px 18px',
                       textAlign: 'left',
                       cursor: 'pointer',
                       boxShadow: isSelected ? `0 4px 0 ${dg.badgeColor}` : 'none'
@@ -504,14 +540,14 @@ export default function DuolingoOnboarding() {
                   >
                     <div style={{
                       fontFamily: 'Fredoka, sans-serif',
-                      fontSize: '15px',
+                      fontSize: '18px',
                       fontWeight: 800,
                       color: isSelected ? dg.badgeColor : '#334155'
                     }}>
                       {dg.label}
                     </div>
-                    <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px', fontWeight: 600 }}>
-                      {dg.subLabel}
+                    <div style={{ fontSize: '15px', color: '#64748B', marginTop: '4px', fontWeight: 600 }}>
+                      {dg.shortSubLabel}
                     </div>
                   </button>
                 );
@@ -533,21 +569,23 @@ export default function DuolingoOnboarding() {
                 backgroundColor: '#58CC02',
                 color: '#FFFFFF',
                 fontFamily: 'Fredoka, sans-serif',
-                fontSize: '19px',
+                fontSize: '20px',
                 fontWeight: 800,
-                padding: '16px 48px',
-                borderRadius: '18px',
+                padding: '18px 42px',
+                minWidth: '320px',
+                minHeight: '68px',
+                borderRadius: '20px',
                 border: 'none',
                 cursor: 'pointer',
                 boxShadow: '0 6px 0 #46A302',
                 transition: 'all 0.1s ease',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '10px'
+                gap: '14px'
               }}
             >
-              <span>BẮT ĐẦU BÀI MỒI KHẢO SÁT (+20 ⭐)</span>
-              <span>➔</span>
+              <span>BẮT ĐẦU (+20 ⭐)</span>
+              <span style={{ fontSize: '30px', lineHeight: 1, fontWeight: 900 }} aria-hidden="true">➜</span>
             </button>
           </div>
         </div>
@@ -555,7 +593,7 @@ export default function DuolingoOnboarding() {
 
       {/* ================= STEP 2: BÀI MỒI THỬ THÁCH (4 CÂU HỎI) ================= */}
       {step === 'PLACEMENT_TEST' && currentQ && (
-        <div style={{ padding: '32px 32px 100px 32px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
+        <div style={{ padding: '26px 32px 110px 32px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
           {/* Header question status */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{
@@ -591,7 +629,7 @@ export default function DuolingoOnboarding() {
               }}
             >
               <span>🔊</span>
-              <span>Nghe tiếng Anh + tiếng Việt</span>
+              <span>Nghe</span>
             </button>
           </div>
 
@@ -619,6 +657,22 @@ export default function DuolingoOnboarding() {
             </div>
           </div>
 
+          <div style={{
+            alignSelf: 'center',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '8px 14px',
+            borderRadius: '999px',
+            backgroundColor: '#FFF7ED',
+            color: '#9A3412',
+            fontSize: '18px',
+            fontWeight: 700
+          }}>
+            <span>💡</span>
+            <span>Gợi ý: {currentQ.hint || 'nhìn hình, chọn từ đúng.'}</span>
+          </div>
+
           {/* Question Image */}
           <div style={{
             display: 'flex',
@@ -627,18 +681,18 @@ export default function DuolingoOnboarding() {
             backgroundColor: '#F8FAFC',
             borderRadius: '24px',
             border: '2px solid #E2E8F0',
-            padding: '16px',
-            maxHeight: '260px',
+            padding: '12px',
+            height: '340px',
             overflow: 'hidden'
           }}>
             <img
               src={questionImage}
               alt="Illustration"
               style={{
-                maxHeight: '220px',
-                width: 'auto',
+                height: '320px',
+                width: '100%',
                 maxWidth: '100%',
-                objectFit: 'cover',
+                objectFit: 'contain',
                 borderRadius: '16px',
                 boxShadow: '0 4px 12px rgba(0,0,0,0.08)'
               }}
@@ -646,7 +700,7 @@ export default function DuolingoOnboarding() {
           </div>
 
           {/* Options Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+          <div className="placement-options-grid">
             {currentQ.options.map((opt, idx) => {
               const isSelected = selectedOptionIndex === idx;
               let borderStyle = '2.5px solid #E5E5E5';
@@ -679,17 +733,24 @@ export default function DuolingoOnboarding() {
                     backgroundColor: bgStyle,
                     border: borderStyle,
                     borderRadius: '20px',
-                    padding: '18px 16px',
+                    minHeight: '154px',
+                    padding: '16px',
                     cursor: isChecked ? 'default' : 'pointer',
                     boxShadow: shadowStyle,
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '14px',
-                    textAlign: 'left',
+                    gap: '10px',
+                    justifyContent: 'center',
+                    textAlign: 'center',
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  <span style={{ fontSize: '34px', lineHeight: 1 }}>{opt.emoji}</span>
+                  <img
+                    src={getVocabularyDisplayImage(opt.text, undefined, opt.subText)}
+                    alt=""
+                    loading="lazy"
+                    style={{ width: '118px', height: '92px', objectFit: 'cover', borderRadius: '14px', display: 'block' }}
+                  />
                   <div>
                     <div style={{
                       fontFamily: 'Fredoka, sans-serif',
@@ -734,7 +795,7 @@ export default function DuolingoOnboarding() {
             {!isChecked ? (
               <>
                 <div style={{ fontSize: '14px', color: '#64748B', fontWeight: 600 }}>
-                  👉 Bé hãy chọn đáp án bé nghĩ là đúng nhất nhé!
+                  👉 Nhìn hình, chọn từ đúng nhé!
                 </div>
                 <button
                   onClick={handleCheckAnswer}
@@ -752,7 +813,7 @@ export default function DuolingoOnboarding() {
                     boxShadow: selectedOptionIndex !== null ? '0 5px 0 #46A302' : 'none'
                   }}
                 >
-                  KIỂM TRA ĐÁP ÁN
+                  KIỂM TRA
                 </button>
               </>
             ) : (
@@ -769,13 +830,13 @@ export default function DuolingoOnboarding() {
                       color: currentQ.options[selectedOptionIndex || 0]?.isCorrect ? '#2B8200' : '#EA2B2B'
                     }}>
                       {currentQ.options[selectedOptionIndex || 0]?.isCorrect
-                        ? 'Chính xác 100%! Bé xuất sắc quá!'
-                        : `Cố lên bé ơi! Đáp án đúng là: ${currentQ.options.find(o => o.isCorrect)?.text}`}
+                        ? 'Đúng rồi!'
+                        : `Gợi ý: ${currentQ.hint || 'Hãy nhìn kỹ hình và thử lại nhé.'}`}
                     </div>
                     <div style={{ fontSize: '13px', color: '#475569', fontWeight: 600 }}>
                       {currentQ.options[selectedOptionIndex || 0]?.isCorrect
-                        ? '+10 điểm phản xạ tiếng Anh bản xứ'
-                        : 'Không sao cả, bé sẽ được luyện tập lại trong bài học nhé!'}
+                        ? '+10 điểm'
+                        : 'Thử lại nhé!'}
                     </div>
                   </div>
                 </div>
@@ -786,16 +847,18 @@ export default function DuolingoOnboarding() {
                     backgroundColor: currentQ.options[selectedOptionIndex || 0]?.isCorrect ? '#58CC02' : '#EA2B2B',
                     color: '#FFFFFF',
                     fontFamily: 'Fredoka, sans-serif',
-                    fontSize: '17px',
+                    fontSize: '20px',
                     fontWeight: 800,
-                    padding: '14px 38px',
-                    borderRadius: '16px',
+                    padding: '18px 54px',
+                    minWidth: '160px',
+                    minHeight: '60px',
+                    borderRadius: '18px',
                     border: 'none',
                     cursor: 'pointer',
                     boxShadow: currentQ.options[selectedOptionIndex || 0]?.isCorrect ? '0 5px 0 #46A302' : '0 5px 0 #B91C1C'
                   }}
                 >
-                  {currentQIndex + 1 < placementQuestions.length ? 'TIẾP TỤC ➔' : 'XEM KẾT QUẢ XẾP LỚP 🏆'}
+                  {currentQIndex + 1 < placementQuestions.length ? 'TIẾP ➔' : 'KẾT QUẢ 🏆'}
                 </button>
               </>
             )}
@@ -1048,7 +1111,7 @@ export default function DuolingoOnboarding() {
               />
             </div>
 
-            {/* 3. Email phụ huynh */}
+            {/* 3. Email của bé */}
             <div>
               <label style={{
                 fontFamily: 'Fredoka, sans-serif',
@@ -1058,12 +1121,46 @@ export default function DuolingoOnboarding() {
                 display: 'block',
                 marginBottom: '6px'
               }}>
-                📧 Email phụ huynh (dùng để đăng nhập và nhận OTP):
+                📧 Email của bé (dùng để đăng nhập):
               </label>
               <input
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={childEmail}
+                onChange={(e) => setChildEmail(e.target.value)}
+                placeholder="Ví dụ: be@example.com"
+                required
+                autoComplete="email"
+                style={{
+                  width: '100%',
+                  padding: '14px 18px',
+                  borderRadius: '16px',
+                  border: '2.5px solid #CBD5E1',
+                  fontFamily: 'Fredoka, sans-serif',
+                  fontSize: '16px',
+                  fontWeight: 700,
+                  color: '#0F172A',
+                  outline: 'none',
+                  boxSizing: 'border-box'
+                }}
+              />
+            </div>
+
+            {/* 4. Email phụ huynh */}
+            <div>
+              <label style={{
+                fontFamily: 'Fredoka, sans-serif',
+                fontSize: '15px',
+                fontWeight: 800,
+                color: '#1E293B',
+                display: 'block',
+                marginBottom: '6px'
+              }}>
+                📧 Email phụ huynh (email riêng để liên hệ và nhận OTP):
+              </label>
+              <input
+                type="email"
+                value={parentEmail}
+                onChange={(e) => setParentEmail(e.target.value)}
                 placeholder="Ví dụ: phuhuynh@example.com"
                 required
                 autoComplete="email"
@@ -1082,7 +1179,7 @@ export default function DuolingoOnboarding() {
               />
             </div>
 
-            {/* 4. Tên đăng nhập & Mật khẩu */}
+            {/* 5. Tên đăng nhập & Mật khẩu */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
               <div>
                 <label style={{
@@ -1191,6 +1288,7 @@ export default function DuolingoOnboarding() {
               >
                 Bé hoặc ba mẹ đã có tài khoản rồi? Bấm vào đây để đăng nhập
               </button>
+
             </div>
           </form>
         </div>

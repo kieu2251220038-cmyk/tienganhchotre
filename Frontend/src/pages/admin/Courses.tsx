@@ -45,9 +45,6 @@ export default function Courses() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: '26px', color: '#0F172A', margin: 0, fontWeight: 800 }}>📚 Quản Lý Khóa Học</h1>
-          <p style={{ color: '#64748B', fontSize: '15px', marginTop: '4px' }}>
-            Dữ liệu được tải và lưu trực tiếp trong bảng courses của MySQL.
-          </p>
         </div>
         <Link
           to="/admin/courses/new"

@@ -21,6 +21,11 @@ async function migrate() {
       console.log('Added users.email');
     }
 
+    if (!columnNames.includes('parent_email')) {
+      await connection.query('ALTER TABLE users ADD COLUMN parent_email VARCHAR(255) NULL AFTER email');
+      console.log('Added users.parent_email');
+    }
+
     const [indexes] = await connection.query('SHOW INDEX FROM users');
     const hasEmailUniqueIndex = indexes.some((index) => index.Key_name === 'uq_users_email');
     if (!hasEmailUniqueIndex) {

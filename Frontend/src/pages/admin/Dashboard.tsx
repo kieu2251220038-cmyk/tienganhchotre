@@ -16,7 +16,7 @@ export default function AdminDashboard() {
       {/* Title */}
       <div>
         <h1 style={{ fontSize: '26px', color: '#0F172A', margin: 0, fontWeight: 800 }}>
-          📊 Tổng Quan Hệ Thống (Dashboard A01)
+          📊 Tổng Quan Hệ Thống
         </h1>
         <p style={{ color: '#64748B', fontSize: '15px', marginTop: '4px' }}>
           Báo cáo thống kê hoạt động học tập, tài khoản người dùng và nội dung bài giảng

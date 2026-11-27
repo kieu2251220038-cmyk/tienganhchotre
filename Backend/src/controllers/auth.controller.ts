@@ -53,10 +53,28 @@ function toAuthUser(user: any) {
         id: user.id,
         username: user.username,
         email: user.email || null,
+        parent_email: user.parent_email || null,
         display_name: user.display_name || user.username,
         role: user.role,
         age_group: user.age_group
     };
+}
+
+async function linkChildrenToParent(parentId: number, parentEmail: string): Promise<void> {
+    const [children]: any = await pool.query(
+        `SELECT id FROM users
+         WHERE role = 'USER' AND LOWER(parent_email) = LOWER(?)`,
+        [parentEmail]
+    );
+
+    for (const child of children) {
+        await pool.query(
+            `INSERT IGNORE INTO parent_children (parent_id, child_id, relationship)
+             VALUES (?, ?, 'Con')`,
+            [parentId, child.id]
+        );
+        await pool.query('UPDATE users SET parent_id = ? WHERE id = ?', [parentId, child.id]);
+    }
 }
 
 export const login = async (req: Request, res: Response): Promise<void> => {
@@ -103,8 +121,9 @@ export const login = async (req: Request, res: Response): Promise<void> => {
 };
 
 export const register = async (req: Request, res: Response): Promise<void> => {
-    const { username, password, email: rawEmail, displayName, role = 'USER', dailyGoalMinutes = 10 } = req.body;
+    const { username, password, email: rawEmail, parentEmail: rawParentEmail, displayName, dailyGoalMinutes = 10 } = req.body;
     const email = normalizeEmail(rawEmail);
+    const parentEmail = normalizeEmail(rawParentEmail);
     const ageGroup = normalizeAge(req.body.ageGroup ?? '3');
 
     if (!ageGroup) {
@@ -112,37 +131,67 @@ export const register = async (req: Request, res: Response): Promise<void> => {
         return;
     }
 
-    if (!username || !password || !email) {
-        res.status(400).json({ message: 'Email, tên đăng nhập và mật khẩu không được để trống!' });
+    if (!username || !password || !email || !parentEmail) {
+        res.status(400).json({ message: 'Email của bé, email phụ huynh, tên đăng nhập và mật khẩu không được để trống!' });
         return;
     }
 
-    if (!isValidEmail(email)) {
-        res.status(400).json({ message: 'Địa chỉ email không hợp lệ!' });
+    if (!isValidEmail(email) || !isValidEmail(parentEmail)) {
+        res.status(400).json({ message: 'Email của bé hoặc email phụ huynh không hợp lệ!' });
+        return;
+    }
+
+    if (email === parentEmail) {
+        res.status(400).json({ message: 'Email của bé và email phụ huynh phải là hai email khác nhau!' });
         return;
     }
 
     try {
-        // 1. Kiểm tra username và email đã tồn tại chưa
+        // 1. Email của bé là email đăng nhập riêng; email phụ huynh
+        // không được trùng với một tài khoản khác (trừ tài khoản PARENT
+        // đã đăng ký để có thể tự động liên kết hồ sơ bé).
         const [existing]: any = await pool.query(
-            'SELECT id, username, email FROM users WHERE username = ? OR LOWER(email) = LOWER(?)',
-            [username, email]
+            `SELECT id, username, email, role
+             FROM users
+             WHERE username = ?
+                OR LOWER(email) = LOWER(?)
+                OR LOWER(email) = LOWER(?)`,
+            [username, email, parentEmail]
         );
-        if (existing.length > 0) {
-            const emailExists = existing.some((item: any) => item.email && String(item.email).toLowerCase() === email);
-            res.status(400).json({ message: emailExists ? 'Email đã được sử dụng!' : 'Tên đăng nhập đã tồn tại!' });
+
+        const usernameExists = existing.some((item: any) => item.username === username);
+        const childEmailExists = existing.some((item: any) =>
+            item.email && String(item.email).toLowerCase() === email
+        );
+        const parentEmailAccount = existing.find((item: any) =>
+            item.email && String(item.email).toLowerCase() === parentEmail
+        );
+
+        if (childEmailExists) {
+            res.status(400).json({ message: 'Email của bé đã được sử dụng!' });
+            return;
+        }
+
+        if (parentEmailAccount && parentEmailAccount.role !== 'PARENT') {
+            res.status(400).json({
+                message: 'Email phụ huynh phải là email riêng, không được dùng email của tài khoản khác!'
+            });
+            return;
+        }
+
+        if (usernameExists) {
+            res.status(400).json({ message: 'Tên đăng nhập đã tồn tại!' });
             return;
         }
 
         const passwordHash = await bcrypt.hash(password, 12);
 
-        // 2. Thêm người dùng mới vào database
-        const validRoles = ['USER', 'ADMIN', 'EXPERT', 'PARENT'];
-        const userRole = validRoles.includes(role) ? role : 'USER';
-
+        // 2. Thêm tài khoản bé. Role USER luôn được xác định ở backend.
         const [result]: any = await pool.query(
-            'INSERT INTO users (username, email, password_hash, display_name, role, age_group, daily_goal_minutes) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [username, email, passwordHash, displayName || username, userRole, ageGroup, Number(dailyGoalMinutes) || 10]
+            `INSERT INTO users
+                (username, email, parent_email, password_hash, display_name, role, age_group, daily_goal_minutes)
+             VALUES (?, ?, ?, ?, ?, 'USER', ?, ?)`,
+            [username, email, parentEmail, passwordHash, displayName || username, ageGroup, Number(dailyGoalMinutes) || 10]
         );
 
         const newUserId = result.insertId;
@@ -157,12 +206,21 @@ export const register = async (req: Request, res: Response): Promise<void> => {
             [newUserId, Number(ageGroup)]
         );
 
+        const [parents]: any = await pool.query(
+            `SELECT id FROM users WHERE role = 'PARENT' AND LOWER(email) = LOWER(?) LIMIT 1`,
+            [parentEmail]
+        );
+        if (parents.length > 0) {
+            await linkChildrenToParent(Number(parents[0].id), parentEmail);
+        }
+
         const user = {
             id: newUserId,
             username,
             email,
+            parent_email: parentEmail,
             display_name: displayName || username,
-            role: userRole,
+            role: 'USER',
             age_group: ageGroup
         };
         const token = createToken(user);
@@ -175,6 +233,68 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     } catch (error: any) {
         console.error('Lỗi chi tiết khi đăng ký:', error);
         res.status(500).json({ message: error.message || 'Lỗi hệ thống khi đăng ký' });
+    }
+};
+
+export const registerParent = async (req: Request, res: Response): Promise<void> => {
+    const { username, password, email: rawEmail, displayName } = req.body;
+    const email = normalizeEmail(rawEmail);
+
+    if (!username || !password || !email) {
+        res.status(400).json({ message: 'Email phụ huynh, tên đăng nhập và mật khẩu không được để trống!' });
+        return;
+    }
+
+    if (!isValidEmail(email)) {
+        res.status(400).json({ message: 'Địa chỉ email phụ huynh không hợp lệ!' });
+        return;
+    }
+
+    if (String(password).length < 6) {
+        res.status(400).json({ message: 'Mật khẩu phải có ít nhất 6 ký tự.' });
+        return;
+    }
+
+    try {
+        const [existing]: any = await pool.query(
+            'SELECT id, username, email FROM users WHERE username = ? OR LOWER(email) = LOWER(?)',
+            [username, email]
+        );
+        if (existing.length > 0) {
+            const emailExists = existing.some((item: any) => item.email && String(item.email).toLowerCase() === email);
+            res.status(400).json({ message: emailExists ? 'Email phụ huynh đã được sử dụng!' : 'Tên đăng nhập đã tồn tại!' });
+            return;
+        }
+
+        const passwordHash = await bcrypt.hash(password, 12);
+        const [result]: any = await pool.query(
+            `INSERT INTO users
+                (username, email, password_hash, display_name, role, age_group, daily_goal_minutes)
+             VALUES (?, ?, ?, ?, 'PARENT', '3', 0)`,
+            [username, email, passwordHash, displayName || username]
+        );
+
+        const newParentId = Number(result.insertId);
+        await linkChildrenToParent(newParentId, email);
+
+        const user = {
+            id: newParentId,
+            username,
+            email,
+            display_name: displayName || username,
+            role: 'PARENT',
+            age_group: '3'
+        };
+        const token = createToken(user);
+
+        res.status(201).json({
+            message: 'Đăng ký tài khoản phụ huynh thành công!',
+            token,
+            user
+        });
+    } catch (error: any) {
+        console.error('Lỗi đăng ký tài khoản phụ huynh:', error);
+        res.status(500).json({ message: error.message || 'Lỗi hệ thống khi đăng ký tài khoản phụ huynh' });
     }
 };
 

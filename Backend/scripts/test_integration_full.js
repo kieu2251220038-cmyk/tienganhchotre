@@ -164,14 +164,14 @@ async function runTests() {
   console.log('\n--- 5. KIỂM TRA PHÒNG CHỐNG TRUY CẬP TRÁI QUYỀN (ANTI-IDOR) ---');
   // Đăng ký tài khoản Phụ huynh B
   const parentBUsername = `phuhuynh_b_${Date.now()}`;
-  await fetch(`${API_BASE}/auth/register`, {
+  await fetch(`${API_BASE}/auth/register/parent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       username: parentBUsername,
       password: '123456',
       displayName: 'Phụ Huynh B (Khác gia đình)',
-      role: 'PARENT'
+      email: `${parentBUsername}@example.com`
     })
   });
 

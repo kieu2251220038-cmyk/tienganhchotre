@@ -20,6 +20,24 @@ interface PlacementQuestionGroup {
     answers: PlacementAnswer[];
 }
 
+// Gợi ý được tạo ở Backend để nội dung hint luôn đi cùng dữ liệu câu hỏi.
+// Chỉ cung cấp manh mối (chữ cái đầu + nghĩa), không trả thẳng đáp án.
+function buildPlacementHint(answer: PlacementAnswer | undefined): string {
+    if (!answer) return 'Hãy nhìn kỹ hình và chọn từ phù hợp nhé.';
+
+    const answerText = answer.answerText.trim();
+    const firstLetter = Array.from(answerText)[0]?.toUpperCase();
+    const meaning = answer.meaningVi.trim();
+
+    if (firstLetter && meaning) {
+        return `Từ này bắt đầu bằng chữ "${firstLetter}" và có nghĩa là "${meaning}".`;
+    }
+
+    if (firstLetter) return `Từ đúng bắt đầu bằng chữ "${firstLetter}".`;
+    if (meaning) return `Đáp án có nghĩa là "${meaning}".`;
+    return 'Hãy nhìn kỹ hình và chọn từ phù hợp nhé.';
+}
+
 function shuffle<T>(items: T[]): T[] {
     const shuffled = [...items];
     for (let index = shuffled.length - 1; index > 0; index -= 1) {
@@ -152,6 +170,7 @@ export const getPlacementQuestions = async (req: Request, res: Response): Promis
                 promptEn: question.questionText,
                 speakText: question.questionText,
                 image: toPublicMediaUrl(req, imageUrl),
+                hint: buildPlacementHint(correctAnswer),
                 options: answers.map((answer) => ({
                     text: answer.answerText,
                     subText: answer.meaningVi,

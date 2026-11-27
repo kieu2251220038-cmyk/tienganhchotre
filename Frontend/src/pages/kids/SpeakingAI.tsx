@@ -502,7 +502,7 @@ export default function SpeakingAI() {
       sounds.playVictory();
       setCelebrationKey((key) => key + 1);
       setShowCelebration(true);
-      setAiFeedback('Tuyệt đỉnh! Giọng của bé chuẩn như người bản ngữ! ⭐');
+      setAiFeedback('');
       stopRecording();
     } else {
       sounds.playWrong();
@@ -722,6 +722,7 @@ export default function SpeakingAI() {
         visible={showCelebration}
         eventKey={celebrationKey}
         onDone={() => setShowCelebration(false)}
+        rewardCoins={10}
       />
       {reward && (
         <RewardPopup
@@ -818,23 +819,25 @@ export default function SpeakingAI() {
             type="button"
             onClick={handleListenSample}
             className={`btn-kid btn-primary ${isSpeakingSample ? 'animate-pulse-glow' : ''}`}
+            aria-label={isSpeakingSample ? 'Đang phát âm mẫu' : 'Nghe phát âm mẫu'}
+            title={isSpeakingSample ? 'Đang phát âm mẫu' : 'Nghe phát âm mẫu'}
             style={{
-              padding: '12px 28px',
-              fontSize: '17px',
+              width: '132px',
+              height: '132px',
+              padding: 0,
               fontWeight: 800,
               backgroundColor: isSpeakingSample ? '#2563EB' : '#0284C7',
               boxShadow: isSpeakingSample ? '0 4px 0 #1D4ED8' : '0 4px 0 #0369A1',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '10px',
-              borderRadius: '999px',
+              justifyContent: 'center',
+              borderRadius: '28px',
               cursor: isSpeakingSample ? 'wait' : 'pointer',
               opacity: isSpeakingSample ? 0.8 : 1,
               transition: 'all 0.2s ease'
             }}
           >
-            <span style={{ fontSize: '24px' }}>🔊</span>
-            <span>{isSpeakingSample ? 'Đang đọc mẫu cho bé nghe...' : 'Bấm vào đây để nghe phát âm mẫu'}</span>
+            <span style={{ fontSize: '72px', lineHeight: 1 }} aria-hidden="true">🔊</span>
           </button>
         </div>
 
@@ -882,14 +885,14 @@ export default function SpeakingAI() {
             onClick={handleToggleRecord}
             className={isRecording ? 'animate-pulse-glow' : ''}
             style={{
-              width: '100px',
-              height: '100px',
+              width: '132px',
+              height: '132px',
               borderRadius: '50%',
               backgroundColor: isRecording ? '#EF4444' : '#58CC02',
               color: '#FFFFFF',
-              border: '6px solid #FFFFFF',
-              boxShadow: isRecording ? '0 8px 0 #DC2626, 0 0 20px rgba(239, 68, 68, 0.6)' : '0 8px 0 #46A302',
-              fontSize: '44px',
+              border: '7px solid #FFFFFF',
+              boxShadow: isRecording ? '0 10px 0 #DC2626, 0 0 24px rgba(239, 68, 68, 0.6)' : '0 10px 0 #46A302',
+              fontSize: '60px',
               cursor: 'pointer',
               transition: 'all 0.15s ease',
               display: 'inline-flex',
@@ -901,7 +904,7 @@ export default function SpeakingAI() {
           </button>
           <div style={{
             fontFamily: 'Fredoka, sans-serif',
-            fontSize: '16px',
+            fontSize: '18px',
             fontWeight: 700,
             color: isRecording ? '#DC2626' : '#64748B',
             marginTop: '12px'

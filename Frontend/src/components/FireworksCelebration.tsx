@@ -4,6 +4,7 @@ interface FireworksCelebrationProps {
   visible: boolean;
   eventKey: number;
   onDone: () => void;
+  rewardCoins?: number;
 }
 
 const burstColors = ['#58CC02', '#1CB0F6', '#FFC800', '#FF4B4B', '#CE82FF'];
@@ -16,7 +17,7 @@ const burstPositions = [
 ];
 const confettiColors = ['#58CC02', '#1CB0F6', '#FFC800', '#FF4B4B', '#CE82FF', '#FF8A00'];
 
-export default function FireworksCelebration({ visible, eventKey, onDone }: FireworksCelebrationProps) {
+export default function FireworksCelebration({ visible, eventKey, onDone, rewardCoins }: FireworksCelebrationProps) {
   useEffect(() => {
     if (!visible) return undefined;
     const timer = window.setTimeout(onDone, 1600);
@@ -68,6 +69,12 @@ export default function FireworksCelebration({ visible, eventKey, onDone }: Fire
           font: 800 31px Fredoka, sans-serif;
           white-space: nowrap;
           animation: fireworksMessage 1.6s ease-out forwards;
+        }
+        .fireworks-coin-message {
+          min-width: 220px;
+          text-align: center;
+          color: #CA8A04;
+          font-size: 48px;
         }
         .fireworks-burst {
           position: absolute;
@@ -127,7 +134,9 @@ export default function FireworksCelebration({ visible, eventKey, onDone }: Fire
         />
       ))}
 
-      <div className="fireworks-message">🎉 Chính xác! Bé giỏi quá! ✨</div>
+      <div className={`fireworks-message${rewardCoins !== undefined ? ' fireworks-coin-message' : ''}`}>
+        {rewardCoins !== undefined ? `+${rewardCoins} 🪙` : '🎉 Chính xác! Bé giỏi quá! ✨'}
+      </div>
     </div>
   );
 }

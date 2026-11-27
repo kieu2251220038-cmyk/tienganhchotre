@@ -5,7 +5,8 @@ import { sounds } from '../../utils/soundEffects';
 
 export default function Register() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
+  const [childEmail, setChildEmail] = useState('');
+  const [parentEmail, setParentEmail] = useState('');
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
@@ -17,13 +18,19 @@ export default function Register() {
     e.preventDefault();
     sounds.playClick();
     setErrorMsg('');
+
+    if (childEmail.trim().toLowerCase() === parentEmail.trim().toLowerCase()) {
+      setErrorMsg('Email của bé và email phụ huynh phải là hai email khác nhau!');
+      return;
+    }
+
     setLoading(true);
 
     try {
-      await authService.register(email, username, password, displayName, ageGroup);
+      await authService.register(childEmail, parentEmail, username, password, displayName, ageGroup);
       sounds.playVictory();
       // Auto login
-      await authService.login(email, password);
+      await authService.login(childEmail, password);
       navigate('/dashboard');
     } catch (err: unknown) {
       sounds.playWrong();
@@ -94,13 +101,38 @@ export default function Register() {
         <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
             <label style={{ display: 'block', fontFamily: 'Fredoka, sans-serif', fontSize: '14px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
-              Email của phụ huynh
+              Email của bé (dùng để đăng nhập)
             </label>
             <input
               type="email"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={childEmail}
+              onChange={(e) => setChildEmail(e.target.value)}
+              placeholder="bengoai@example.com"
+              autoComplete="email"
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                borderRadius: '14px',
+                border: '2px solid #CBD5E1',
+                fontSize: '15px',
+                fontFamily: 'Nunito, sans-serif',
+                fontWeight: 600,
+                outline: 'none',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
+          <div>
+            <label style={{ display: 'block', fontFamily: 'Fredoka, sans-serif', fontSize: '14px', fontWeight: 700, color: '#334155', marginBottom: '4px' }}>
+              Email phụ huynh (email riêng để liên hệ)
+            </label>
+            <input
+              type="email"
+              required
+              value={parentEmail}
+              onChange={(e) => setParentEmail(e.target.value)}
               placeholder="phuhuynh@example.com"
               autoComplete="email"
               style={{
@@ -229,6 +261,13 @@ export default function Register() {
           Đã có tài khoản rồi?{' '}
           <Link to="/login" style={{ color: '#2563EB', fontWeight: 800, textDecoration: 'none' }}>
             Đăng nhập ngay ➔
+          </Link>
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: '10px', fontSize: '14px', color: '#64748B', fontWeight: 600 }}>
+          Là phụ huynh?{' '}
+          <Link to="/parent/register" style={{ color: '#BE123C', fontWeight: 800, textDecoration: 'none' }}>
+            Đăng ký tài khoản phụ huynh
           </Link>
         </div>
       </div>

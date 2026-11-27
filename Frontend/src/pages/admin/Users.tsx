@@ -8,6 +8,8 @@ export default function Users() {
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [message, setMessage] = useState('');
+  const [editError, setEditError] = useState('');
+  const [savingUser, setSavingUser] = useState(false);
 
   const loadUsers = () => {
     adminService.getUsers().then(setUsers);
@@ -20,14 +22,27 @@ export default function Users() {
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingUser) return;
+
+    const email = (editingUser.email || '').trim().toLowerCase();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setEditError('Vui lòng nhập email hợp lệ, ví dụ: user@example.com.');
+      return;
+    }
+
+    setEditError('');
+    setSavingUser(true);
     try {
-      await adminService.updateUser(editingUser.id, editingUser);
+      await adminService.updateUser(editingUser.id, { ...editingUser, email: email || null });
       setMessage('✅ Cập nhật người dùng thành công!');
       setEditingUser(null);
       loadUsers();
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
-      setMessage(getAdminErrorMessage(error, 'Không thể cập nhật người dùng.'));
+      const errorMessage = getAdminErrorMessage(error, 'Không thể cập nhật người dùng.');
+      setEditError(errorMessage);
+      setMessage(errorMessage);
+    } finally {
+      setSavingUser(false);
     }
   };
 
@@ -57,11 +72,8 @@ export default function Users() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: '26px', color: '#0F172A', margin: 0, fontWeight: 800 }}>
-            👥 Quản Lý Người Dùng (A02)
+            👥 Quản Lý Người Dùng
           </h1>
-          <p style={{ color: '#64748B', fontSize: '15px', marginTop: '4px' }}>
-            Danh sách học sinh, phụ huynh và phân quyền quản trị viên
-          </p>
         </div>
       </div>
 
@@ -193,7 +205,7 @@ export default function Users() {
                 </td>
                 <td style={{ padding: '14px 20px', textAlign: 'right' }}>
                   <button
-                    onClick={() => setEditingUser(u)}
+                    onClick={() => { setEditingUser(u); setEditError(''); }}
                     style={{
                       padding: '6px 12px',
                       borderRadius: '8px',
@@ -252,6 +264,12 @@ export default function Users() {
             <h3 style={{ fontSize: '18px', margin: '0 0 16px 0', color: '#0F172A' }}>
               Chỉnh Sửa Người Dùng: {editingUser.username}
             </h3>
+
+            {editError && (
+              <div style={{ backgroundColor: '#FEF2F2', border: '1px solid #FCA5A5', color: '#B91C1C', borderRadius: '10px', padding: '10px 12px', marginBottom: '14px', fontSize: '13px', fontWeight: 700 }}>
+                {editError}
+              </div>
+            )}
 
             <form onSubmit={handleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
@@ -316,16 +334,18 @@ export default function Users() {
               <div style={{ display: 'flex', gap: '10px', marginTop: '10px', justifyContent: 'flex-end' }}>
                 <button
                   type="button"
-                  onClick={() => setEditingUser(null)}
+                  disabled={savingUser}
+                  onClick={() => { setEditingUser(null); setEditError(''); }}
                   style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #CBD5E1', background: '#FFF', cursor: 'pointer' }}
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
+                  disabled={savingUser}
                   style={{ padding: '10px 20px', borderRadius: '8px', border: 'none', background: '#0284C7', color: '#FFF', fontWeight: 700, cursor: 'pointer' }}
                 >
-                  Lưu Thay Đổi
+                  {savingUser ? 'Đang lưu...' : 'Lưu Thay Đổi'}
                 </button>
               </div>
             </form>

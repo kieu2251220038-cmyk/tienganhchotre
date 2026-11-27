@@ -63,9 +63,9 @@ export const authService = {
     return res.data.user;
   },
 
-  async register(email: string, username: string, password: string, displayName: string, ageGroup: string = '5', dailyGoalMinutes: number = 10): Promise<User> {
+  async register(email: string, parentEmail: string, username: string, password: string, displayName: string, ageGroup: string = '5', dailyGoalMinutes: number = 10): Promise<User> {
     try {
-      const res = await API.post('/auth/register', { email, username, password, displayName, ageGroup, dailyGoalMinutes });
+      const res = await API.post('/auth/register', { email, parentEmail, username, password, displayName, ageGroup, dailyGoalMinutes });
       if (res.data && res.data.token && res.data.user) {
         this.setCurrentUser(res.data.user, res.data.token);
         return res.data.user;
@@ -74,6 +74,20 @@ export const authService = {
     } catch (err: unknown) {
       const errorMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       throw new Error(errorMsg || 'Đăng ký không thành công');
+    }
+  },
+
+  async registerParent(email: string, username: string, password: string, displayName: string): Promise<User> {
+    try {
+      const res = await API.post('/auth/register/parent', { email, username, password, displayName });
+      if (res.data && res.data.token && res.data.user) {
+        this.setCurrentUser(res.data.user, res.data.token);
+        return res.data.user;
+      }
+      throw new Error('Dữ liệu đăng ký phụ huynh trả về không hợp lệ');
+    } catch (err: unknown) {
+      const errorMsg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      throw new Error(errorMsg || 'Đăng ký tài khoản phụ huynh không thành công');
     }
   },
 

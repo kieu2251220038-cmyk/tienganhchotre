@@ -180,6 +180,7 @@ export default function QuizLesson() {
         visible={showCelebration}
         eventKey={celebrationKey}
         onDone={() => setShowCelebration(false)}
+        rewardCoins={currentQ.points || 10}
       />
       {/* Reward Popup */}
       {reward && (
@@ -360,15 +361,28 @@ export default function QuizLesson() {
                 >
                   <div style={{
                     width: '100%',
-                    height: '190px',
+                    height: '210px',
                     borderRadius: '16px',
                     overflow: 'hidden',
-                    marginBottom: '12px'
+                    marginBottom: '12px',
+                    background: 'linear-gradient(145deg, #F8FBFF 0%, #EEF6FF 100%)',
+                    border: '1px solid #DBEAFE',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '10px'
                   }}>
                     <img
                       src={getVocabularyDisplayImage(ans.answer_text, ans.media_url, ans.meaning_vi)}
                       alt={ans.answer_text}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        objectPosition: 'center',
+                        display: 'block',
+                        filter: 'drop-shadow(0 8px 8px rgba(30, 64, 175, 0.14))'
+                      }}
                     />
                   </div>
                   <div style={{
@@ -414,14 +428,14 @@ export default function QuizLesson() {
                     color: selectedAnswer && isCorrectAnswer(selectedAnswer) ? '#166534' : '#991B1B'
                   }}>
                     {selectedAnswer && isCorrectAnswer(selectedAnswer)
-                      ? 'Chính xác rồi! Bé giỏi quá!'
+                      ? `+${currentQ.points || 10} 🪙`
                       : wrongAnswerWasRetry
                       ? 'Bé đã ôn lại câu này rồi. Mình cùng cố gắng ở câu tiếp theo nhé!'
                       : 'Chưa đúng rồi! Câu này sẽ xuất hiện lại với vị trí đáp án mới để bé ghi nhớ nhé!'}
                   </div>
                   <div style={{ fontSize: '16px', color: selectedAnswer && isCorrectAnswer(selectedAnswer) ? '#15803D' : '#B91C1C', fontWeight: 600 }}>
                     {selectedAnswer && isCorrectAnswer(selectedAnswer)
-                      ? '+10 Điểm thưởng ⭐'
+                      ? ''
                       : wrongAnswerWasRetry
                       ? 'Câu này đã được ôn lại rồi.'
                       : 'Bé hãy xem lại đáp án màu xanh lá cây; lần sau các đáp án sẽ đổi vị trí.'}

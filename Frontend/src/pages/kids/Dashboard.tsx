@@ -365,10 +365,10 @@ export default function Dashboard() {
                       <h2>{stage.title}</h2>
                       <p className="classic-stage-topic">{stage.topicName}</p>
                       <div className={`classic-stage-parts ${stageInteractiveOpen ? 'has-interactive-access' : ''}`} onClick={(event) => void openCompletedStagePart(event, stage)}>
-                        <span className={completedCount > 0 ? 'is-done' : ''}>📖 Học bài</span>
-                        <span className={!canAccessInteractive ? 'is-disabled' : ''}>🎙️ Nói AI</span>
-                        <span className={!canAccessInteractive ? 'is-disabled' : ''}>🎯 Quiz</span>
-                        <span className={!canAccessInteractive ? 'is-disabled' : ''}>🎮 Chơi</span>
+                        <span className={completedCount > 0 ? 'is-done' : ''}><span className="classic-stage-part-icon" aria-hidden="true">📖</span> Học bài</span>
+                        <span className={!canAccessInteractive ? 'is-disabled' : ''}><span className="classic-stage-part-icon" aria-hidden="true">🎙️</span> Nói AI</span>
+                        <span className={!canAccessInteractive ? 'is-disabled' : ''}><span className="classic-stage-part-icon" aria-hidden="true">🎯</span> Quiz</span>
+                        <span className={!canAccessInteractive ? 'is-disabled' : ''}><span className="classic-stage-part-icon" aria-hidden="true">🎮</span> Chơi</span>
                       </div>
                       <div className="classic-stage-footer">
                         <strong>{stageComplete ? 'Đã học xong chặng' : `${completedCount}/${availableLessons.length} phần`}</strong>

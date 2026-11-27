@@ -16,6 +16,7 @@ export interface PlacementQuestion {
   promptEn: string;
   speakText: string;
   image: string;
+  hint?: string;
   options: PlacementQuestionOption[];
 }
 

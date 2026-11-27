@@ -444,9 +444,11 @@ export default function MiniGame() {
   const [isGameOver, setIsGameOver] = useState<boolean>(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebrationKey, setCelebrationKey] = useState(0);
+  const [celebrationCoins, setCelebrationCoins] = useState(10);
   const [reward, setReward] = useState<LessonRewardResult | null>(null);
 
   const celebrateCorrectAnswer = () => {
+    setCelebrationCoins(10);
     setCelebrationKey((key) => key + 1);
     setShowCelebration(true);
   };
@@ -908,6 +910,7 @@ export default function MiniGame() {
         visible={showCelebration}
         eventKey={celebrationKey}
         onDone={() => setShowCelebration(false)}
+        rewardCoins={celebrationCoins}
       />
       {reward && (
         <RewardPopup
@@ -1169,14 +1172,23 @@ export default function MiniGame() {
                         boxShadow: item.matched ? 'none' : '0 4px 0 #E2E8F0',
                         opacity: item.matched ? 0.45 : 1,
                         overflow: 'hidden',
-                        padding: '4px',
+                        padding: '8px',
+                        background: item.matched ? '#F1F5F9' : 'linear-gradient(145deg, #F8FBFF 0%, #EEF6FF 100%)',
                         transition: 'all 0.15s ease'
                       }}
                     >
                       <img
                         src={item.image}
                         alt="Flashcard"
-                        style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'cover', borderRadius: '14px' }}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'contain',
+                          objectPosition: 'center',
+                          borderRadius: '14px',
+                          display: 'block',
+                          filter: 'drop-shadow(0 6px 6px rgba(30, 64, 175, 0.12))'
+                        }}
                       />
                     </div>
                   ))}
@@ -1239,7 +1251,16 @@ export default function MiniGame() {
                     key={`${countQuestion.object.id}-${index}`}
                     src={countQuestion.object.image}
                     alt={countQuestion.object.word}
-                    style={{ width: '160px', height: '130px', objectFit: 'contain', borderRadius: '14px', border: '2px solid #E0F2FE', backgroundColor: '#F8FAFC' }}
+                    style={{
+                      width: '160px',
+                      height: '130px',
+                      objectFit: 'contain',
+                      objectPosition: 'center',
+                      borderRadius: '14px',
+                      border: '2px solid #E0F2FE',
+                      backgroundColor: '#F8FAFC',
+                      filter: 'drop-shadow(0 6px 6px rgba(30, 64, 175, 0.1))'
+                    }}
                   />
                 ))}
               </div>
@@ -1421,7 +1442,15 @@ export default function MiniGame() {
                           <img
                             src={card.image}
                             alt="Card"
-                            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '12px' }}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'contain',
+                              objectPosition: 'center',
+                              borderRadius: '12px',
+                              display: 'block',
+                              filter: 'drop-shadow(0 7px 7px rgba(30, 64, 175, 0.13))'
+                            }}
                           />
                         )
                       ) : (
@@ -1526,7 +1555,17 @@ export default function MiniGame() {
                     <img
                       src={opt.image}
                       alt={opt.word}
-                      style={{ width: '100%', height: '180px', objectFit: 'cover', borderRadius: '14px', display: 'block' }}
+                      style={{
+                        width: '100%',
+                        height: '180px',
+                        objectFit: 'contain',
+                        objectPosition: 'center',
+                        borderRadius: '14px',
+                        display: 'block',
+                        padding: '8px',
+                        background: 'linear-gradient(145deg, #F8FBFF 0%, #EEF6FF 100%)',
+                        filter: 'drop-shadow(0 7px 7px rgba(30, 64, 175, 0.12))'
+                      }}
                     />
                   </div>
                 ))}

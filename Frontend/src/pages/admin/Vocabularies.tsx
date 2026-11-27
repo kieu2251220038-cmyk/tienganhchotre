@@ -183,7 +183,7 @@ export default function Vocabularies() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: '26px', color: '#0F172A', margin: 0, fontWeight: 800 }}>
-            🔤 Quản Lý Từ Vựng & Media (A04)
+            🔤 Quản Lý Từ Vựng & Media
           </h1>
           <p style={{ color: '#64748B', fontSize: '15px', marginTop: '4px' }}>
             Kho từ vựng kèm hình ảnh minh họa và phiên âm chuẩn IPA
@@ -347,7 +347,7 @@ export default function Vocabularies() {
             boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
           }}>
             <h2 style={{ fontSize: '20px', margin: '0 0 6px 0', color: '#0F172A' }}>
-              {editingId ? '✏️ Sửa Từ Vựng' : '➕ Thêm Từ Vựng Mới (A04)'}
+              {editingId ? '✏️ Sửa Từ Vựng' : '➕ Thêm Từ Vựng Mới'}
             </h2>
             <p style={{ fontSize: '13px', color: '#64748B', marginBottom: '20px' }}>
               Nhập thông tin từ tiếng Anh, phiên âm IPA và nghĩa tiếng Việt

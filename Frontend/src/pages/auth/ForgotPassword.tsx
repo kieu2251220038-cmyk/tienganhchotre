@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import { sounds } from '../../utils/soundEffects';
 
@@ -12,8 +12,6 @@ function getRoleHome(role: string): string {
 
 export default function ForgotPassword() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const role = searchParams.get('role') || '';
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -31,7 +29,7 @@ export default function ForgotPassword() {
     try {
       await authService.requestPasswordReset(email.trim());
       setStep('reset');
-      setSuccessMsg('Mã OTP đã được gửi. Vui lòng kiểm tra Gmail của bạn.');
+      setSuccessMsg(`Mã OTP đã được gửi tới ${email.trim()}. Vui lòng kiểm tra đúng hộp thư của email này.`);
       sounds.playVictory();
     } catch (error: unknown) {
       sounds.playWrong();
@@ -82,10 +80,19 @@ export default function ForgotPassword() {
         {successMsg && <div style={{ backgroundColor: '#F0FDF4', border: '1.5px solid #86EFAC', borderRadius: '12px', padding: '11px 14px', color: '#166534', fontSize: '13px', fontWeight: 700, marginBottom: '16px' }}>✅ {successMsg}</div>}
 
         {step === 'email' ? (
-          <form onSubmit={handleRequestOtp} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <form onSubmit={handleRequestOtp} autoComplete="off" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <label style={{ display: 'grid', gap: '6px', color: '#334155', fontWeight: 700, fontSize: '14px' }}>
               Email đăng ký
-              <input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="ban@example.com" autoComplete="email" style={{ padding: '13px 14px', borderRadius: '12px', border: '2px solid #BFDBFE', fontSize: '15px', outline: 'none' }} />
+              <input
+                type="email"
+                name="password-reset-email"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="Nhập email đã đăng ký"
+                autoComplete="off"
+                style={{ padding: '13px 14px', borderRadius: '12px', border: '2px solid #BFDBFE', fontSize: '15px', outline: 'none' }}
+              />
             </label>
             <button type="submit" disabled={loading} style={{ padding: '14px', borderRadius: '12px', border: 'none', backgroundColor: '#2563EB', color: '#FFFFFF', fontFamily: 'Fredoka, sans-serif', fontWeight: 800, fontSize: '16px', cursor: 'pointer', boxShadow: '0 4px 0 #1D4ED8' }}>
               {loading ? 'Đang gửi OTP...' : '📩 Gửi mã OTP'}
@@ -115,7 +122,7 @@ export default function ForgotPassword() {
         )}
 
         <div style={{ textAlign: 'center', marginTop: '22px', fontSize: '14px' }}>
-          <Link to={role === 'ADMIN' ? '/admin/login' : role === 'PARENT' ? '/parent/login' : role === 'EXPERT' ? '/expert/login' : '/login'} style={{ color: '#2563EB', fontWeight: 800, textDecoration: 'none' }}>
+          <Link to="/login" style={{ color: '#2563EB', fontWeight: 800, textDecoration: 'none' }}>
             ← Quay lại đăng nhập
           </Link>
         </div>

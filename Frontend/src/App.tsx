@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import KidsLayout from './layouts/KidsLayout';
 import AdminLayout from './layouts/AdminLayout';
 import LessonAccessGate from './components/kids/LessonAccessGate';
+import RequireRole from './components/auth/RequireRole';
 
 // Kid Pages (U01 - U12)
 import Home from './pages/kids/Home';
@@ -23,9 +24,7 @@ import ParentDashboard from './pages/parent/ParentDashboard';
 // Auth Pages (U10 & Dedicated Portals)
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
-import AdminLogin from './pages/auth/AdminLogin';
-import ParentLogin from './pages/auth/ParentLogin';
-import ExpertLogin from './pages/auth/ExpertLogin';
+import ParentRegister from './pages/auth/ParentRegister';
 import ForgotPassword from './pages/auth/ForgotPassword';
 
 // Admin Pages (A01 - A07)
@@ -77,7 +76,7 @@ function App() {
           <Route path="curriculum" element={<Curriculum />} />
 
           {/* Góc phụ huynh quản lý con em */}
-          <Route path="parent" element={<ParentDashboard />} />
+          <Route path="parent" element={<RequireRole allowedRoles={['PARENT']} redirectTo="/login"><ParentDashboard /></RequireRole>} />
 
           {/* U11: Hồ sơ cá nhân của bé */}
           <Route path="profile" element={<Profile />} />
@@ -86,19 +85,29 @@ function App() {
         {/* U10: Đăng nhập & Đăng ký cho Học sinh / Bé */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/parent/register" element={<ParentRegister />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-
-        {/* ================= DEDICATED LOGIN PORTALS FOR EACH ROLE ================= */}
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/parent/login" element={<ParentLogin />} />
-        <Route path="/expert/login" element={<ExpertLogin />} />
 
         {/* ================= EXPERT EDUCATION PORTAL ================= */}
         {/* Khu vực Chuyên Gia độc lập, không dùng giao diện học sinh */}
-        <Route path="/expert" element={<ExpertDashboard />} />
+        <Route
+          path="/expert"
+          element={(
+            <RequireRole allowedRoles={['EXPERT', 'ADMIN']} redirectTo="/login">
+              <ExpertDashboard />
+            </RequireRole>
+          )}
+        />
 
         {/* ================= ADMIN MANAGEMENT (A01 - A07) ================= */}
-        <Route path="/admin" element={<AdminLayout />}>
+        <Route
+          path="/admin"
+          element={(
+            <RequireRole allowedRoles={['ADMIN']} redirectTo="/login">
+              <AdminLayout />
+            </RequireRole>
+          )}
+        >
           {/* A01: Dashboard tổng quan */}
           <Route index element={<AdminDashboard />} />
 

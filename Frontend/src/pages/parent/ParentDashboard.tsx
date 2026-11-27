@@ -63,9 +63,9 @@ export default function ParentDashboard() {
 
   const loadParentData = async () => {
     try {
-      const u = authService.getCurrentUser();
-      if (!u || (u.role !== 'PARENT' && u.role !== 'ADMIN')) {
-        navigate('/parent/login', { replace: true });
+      const u = await authService.getProfile();
+      if (!u || u.role !== 'PARENT') {
+        navigate('/login', { replace: true });
         return;
       }
       setParentUser(u);
@@ -313,7 +313,7 @@ export default function ParentDashboard() {
           <button
             onClick={() => {
               authService.logout();
-              navigate('/parent/login');
+              navigate('/login');
             }}
             style={{
               padding: '8px 16px',

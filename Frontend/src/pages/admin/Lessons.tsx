@@ -160,7 +160,7 @@ export default function Lessons() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: '26px', color: '#0F172A', margin: 0, fontWeight: 800 }}>
-            📖 Quản Lý Bài Học (A03)
+            📖 Quản Lý Bài Học
           </h1>
           <p style={{ color: '#64748B', fontSize: '15px', marginTop: '4px' }}>
             Thiết lập danh sách bài học Flashcard, Speaking, Quiz và Game theo lộ trình
@@ -411,7 +411,7 @@ export default function Lessons() {
             boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
           }}>
             <h2 style={{ fontSize: '20px', margin: '0 0 6px 0', color: '#0F172A' }}>
-              {editingId ? '✏️ Chỉnh Sửa Bài Học' : '➕ Tạo Bài Học Mới (A07)'}
+              {editingId ? '✏️ Chỉnh Sửa Bài Học' : '➕ Tạo Bài Học Mới'}
             </h2>
             <p style={{ fontSize: '13px', color: '#64748B', marginBottom: '14px' }}>
               Nhập các trường thông tin bài học theo cấu trúc CSDL `lessons`

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { adminService, getAdminErrorMessage, type AdminQuizQuestion, type AdminLesson } from '../../services/adminService';
 
 const getStageLabel = (lesson: AdminLesson) => {
@@ -30,6 +30,7 @@ export default function QuizManager() {
   const [showModal, setShowModal] = useState(false);
   const [editingQuestionId, setEditingQuestionId] = useState<number | null>(null);
   const [message, setMessage] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
 
   // Form State for Question + 4 Answers
   const [lessonId, setLessonId] = useState(3);
@@ -38,6 +39,18 @@ export default function QuizManager() {
   const [answers, setAnswers] = useState<QuizAnswerForm[]>(createEmptyAnswers());
 
   const quizLessons = lessonsList.filter((lesson) => lesson.lesson_type === 'QUIZ');
+
+  const filteredQuestions = useMemo(() => {
+    const keyword = searchTerm.trim().toLocaleLowerCase();
+    if (!keyword) return questions;
+
+    return questions.filter((question) => [
+      question.question_text,
+      question.lesson_title,
+      String(question.id),
+      ...(question.answers || []).map((answer) => answer.answer_text)
+    ].some((value) => String(value || '').toLocaleLowerCase().includes(keyword)));
+  }, [questions, searchTerm]);
 
   const openCreateModal = () => {
     if (quizLessons.length === 0) {
@@ -195,7 +208,7 @@ export default function QuizManager() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h1 style={{ fontSize: '26px', color: '#0F172A', margin: 0, fontWeight: 800 }}>
-            🎯 Quản Lý Bộ Câu Hỏi Quiz (A05)
+            🎯 Quản Lý Bộ Câu Hỏi Quiz
           </h1>
           <p style={{ color: '#64748B', fontSize: '15px', marginTop: '4px' }}>
             Thiết lập câu hỏi trắc nghiệm, hình ảnh minh họa và thiết lập đáp án đúng
@@ -238,9 +251,31 @@ export default function QuizManager() {
         </div>
       )}
 
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative', flex: '1 1 360px' }}>
+          <span aria-hidden="true" style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', fontSize: '19px' }}>🔎</span>
+          <input
+            type="search"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder="Tìm câu hỏi, đáp án hoặc bài học..."
+            aria-label="Tìm kiếm câu hỏi Quiz"
+            style={{ width: '100%', boxSizing: 'border-box', padding: '13px 42px', borderRadius: '14px', border: '2px solid #BFDBFE', background: '#FFFFFF', color: '#0F172A', fontSize: '15px', outline: 'none' }}
+          />
+          {searchTerm && (
+            <button type="button" onClick={() => setSearchTerm('')} aria-label="Xóa tìm kiếm" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'transparent', color: '#64748B', fontSize: '22px', cursor: 'pointer', lineHeight: 1 }}>×</button>
+          )}
+        </div>
+        <span style={{ color: '#64748B', fontWeight: 700, fontSize: '14px' }}>{filteredQuestions.length}/{questions.length} câu hỏi</span>
+      </div>
+
       {/* Questions List */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        {questions.map((q) => (
+        {filteredQuestions.length === 0 ? (
+          <div style={{ padding: '42px', textAlign: 'center', background: '#FFFFFF', borderRadius: '16px', border: '1px solid #E2E8F0', color: '#64748B', fontWeight: 700 }}>
+            {questions.length === 0 ? 'Chưa có câu hỏi Quiz.' : 'Không tìm thấy câu hỏi phù hợp.'}
+          </div>
+        ) : filteredQuestions.map((q) => (
           <div
             key={q.id}
             style={{
@@ -362,7 +397,7 @@ export default function QuizManager() {
             boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)'
           }}>
             <h2 style={{ fontSize: '20px', margin: '0 0 6px 0', color: '#0F172A' }}>
-              {editingQuestionId ? '✏️ Sửa Câu Hỏi Quiz & Thứ Tự Đáp Án' : '➕ Thêm Câu Hỏi Quiz & Đáp Án (A05)'}
+              {editingQuestionId ? '✏️ Sửa Câu Hỏi Quiz & Thứ Tự Đáp Án' : '➕ Thêm Câu Hỏi Quiz & Đáp Án'}
             </h2>
             <p style={{ fontSize: '13px', color: '#64748B', marginBottom: '20px' }}>
                   Nhập câu hỏi và 4 phương án, chọn 1 phương án là đáp án đúng. Có thể đổi đáp án đúng sang vị trí 1, 2, 3 hoặc 4.

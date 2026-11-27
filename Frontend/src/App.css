@@ -182,3 +182,38 @@
     border-right-color: var(--border);
   }
 }
+
+.placement-options-grid {
+  display: flex;
+  gap: 16px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding: 4px 2px 12px;
+  scrollbar-width: thin;
+  scrollbar-color: #93C5FD #E0F2FE;
+}
+
+.placement-options-grid::-webkit-scrollbar {
+  height: 8px;
+}
+
+.placement-options-grid::-webkit-scrollbar-track {
+  background: #E0F2FE;
+  border-radius: 999px;
+}
+
+.placement-options-grid::-webkit-scrollbar-thumb {
+  background: #93C5FD;
+  border-radius: 999px;
+}
+
+.placement-options-grid > button {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .placement-options-grid > button {
+    flex: 0 0 235px;
+  }
+}
