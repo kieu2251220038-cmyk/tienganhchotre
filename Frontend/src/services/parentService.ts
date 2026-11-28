@@ -1,5 +1,5 @@
 import API from './api';
-import type { ParentChild, ChildOverview, ChildActivity, ChildSkill, ChildVocabularyProgress, ChildPronunciationProgress, ChildPronunciationSession } from '../types';
+import type { ParentChild, ChildOverview, ChildActivity, ChildSkillAssessment, ChildVocabularyProgress, ChildPronunciationProgress, ChildPronunciationSession } from '../types';
 
 export const parentService = {
   // Lấy danh sách con em của phụ huynh
@@ -66,8 +66,8 @@ export const parentService = {
   },
 
   // Đánh giá 4 kỹ năng của con
-  getChildSkills: async (childId: number): Promise<{ childId: string; skills: ChildSkill[]; recommendations: string[] }> => {
-    const res = await API.get<{ childId: string; skills: ChildSkill[]; recommendations: string[] }>(`/parent/child/${childId}/skills`);
+  getChildSkills: async (childId: number): Promise<ChildSkillAssessment> => {
+    const res = await API.get<ChildSkillAssessment>(`/parent/child/${childId}/skills`);
     return res.data;
   }
 };

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authService } from '../../services/authService';
 import { parentService } from '../../services/parentService';
-import type { ParentChild, ChildOverview, ChildActivity, ChildSkill, ChildVocabularyProgress, ChildPronunciationProgress, ChildPronunciationSession } from '../../types';
+import type { ParentChild, ChildOverview, ChildActivity, ChildSkill, ChildSkillAssessment, ChildVocabularyProgress, ChildPronunciationProgress, ChildPronunciationSession } from '../../types';
 import speakingSummaryService from '../../services/speakingSummaryService';
 import type { SpeakingSummary } from '../../services/speakingSummaryService';
 import { sounds } from '../../utils/soundEffects';
@@ -17,6 +17,7 @@ export default function ParentDashboard() {
   const [overview, setOverview] = useState<ChildOverview | null>(null);
   const [activities, setActivities] = useState<ChildActivity[]>([]);
   const [skills, setSkills] = useState<ChildSkill[]>([]);
+  const [skillAssessment, setSkillAssessment] = useState<ChildSkillAssessment | null>(null);
   const [vocabularyProgress, setVocabularyProgress] = useState<ChildVocabularyProgress | null>(null);
   const [pronunciationProgress, setPronunciationProgress] = useState<ChildPronunciationProgress | null>(null);
   const [allPronunciationSessions, setAllPronunciationSessions] = useState<ChildPronunciationSession[] | null>(null);
@@ -179,6 +180,7 @@ export default function ParentDashboard() {
         setNewGoalMinutes(ov.daily_goal_minutes || 15);
         setActivities(act);
         setSkills(sk.skills);
+        setSkillAssessment(sk);
         setVocabularyProgress(vocab);
         setPronunciationProgress(pronunciation);
       })
@@ -718,22 +720,6 @@ export default function ParentDashboard() {
                 </p>
               </div>
 
-              <button
-                onClick={() => { sounds.playClick(); navigate('/curriculum'); }}
-                style={{
-                  backgroundColor: '#EFF6FF',
-                  color: '#1D4ED8',
-                  border: '1.5px solid #93C5FD',
-                  borderRadius: '12px',
-                  padding: '8px 16px',
-                  fontFamily: 'Fredoka, sans-serif',
-                  fontWeight: 700,
-                  fontSize: '13px',
-                  cursor: 'pointer'
-                }}
-              >
-                Xem chi tiết tài liệu bài mẫu ➔
-              </button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
@@ -825,22 +811,114 @@ export default function ParentDashboard() {
                 📊 Phân Tích 4 Kỹ Năng Ngôn Ngữ Của Bé
               </h3>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                {skills.map((skill, idx) => (
-                  <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 700 }}>
-                      <span style={{ color: '#334155' }}>{skill.label}</span>
-                      <span style={{ color: '#10B981', fontWeight: 800 }}>{skill.score}%</span>
+              {skillAssessment && (
+                <>
+                  {skillAssessment.summary && (
+                    <div style={{ backgroundColor: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '16px', padding: '14px' }}>
+                      <div style={{ color: '#1D4ED8', fontWeight: 800, marginBottom: '6px' }}>🔎 Phân tích tổng quan</div>
+                      <div style={{ color: '#334155', fontSize: '13px', lineHeight: 1.5 }}>{skillAssessment.summary.message}</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
+                        <span style={{ backgroundColor: '#DBEAFE', color: '#1D4ED8', padding: '5px 9px', borderRadius: '999px', fontSize: '12px', fontWeight: 800 }}>
+                          Điểm tổng hợp: {skillAssessment.summary.averageScore}%
+                        </span>
+                        <span style={{ backgroundColor: '#FFFFFF', color: '#475569', padding: '5px 9px', borderRadius: '999px', fontSize: '12px', fontWeight: 700 }}>
+                          Đã hoàn thành: {skillAssessment.summary.completedLessons} bài
+                        </span>
+                        {skillAssessment.summary.strongestSkill && (
+                          <span style={{ backgroundColor: '#ECFDF5', color: '#047857', padding: '5px 9px', borderRadius: '999px', fontSize: '12px', fontWeight: 700 }}>
+                            Mạnh nhất: {skillAssessment.summary.strongestSkill}
+                          </span>
+                        )}
+                        {skillAssessment.summary.prioritySkill && (
+                          <span style={{ backgroundColor: '#FFF7ED', color: '#C2410C', padding: '5px 9px', borderRadius: '999px', fontSize: '12px', fontWeight: 700 }}>
+                            Ưu tiên: {skillAssessment.summary.prioritySkill}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div style={{ height: '8px', backgroundColor: '#E2E8F0', borderRadius: '999px', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${skill.score}%`, backgroundColor: '#10B981', borderRadius: '999px' }} />
+                  )}
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '12px' }}>
+                  <div style={{ backgroundColor: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: '16px', padding: '14px' }}>
+                    <div style={{ color: '#047857', fontWeight: 800, marginBottom: '8px' }}>✅ Bé đang làm tốt</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {skillAssessment.strengths.map((item) => (
+                        <div key={item} style={{ color: '#065F46', fontSize: '13px', lineHeight: 1.45 }}>• {item}</div>
+                      ))}
                     </div>
-                    <span style={{ fontSize: '11px', color: '#64748B' }}>
-                      {skill.comment}
-                    </span>
                   </div>
-                ))}
+
+                  <div style={{ backgroundColor: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: '16px', padding: '14px' }}>
+                    <div style={{ color: '#C2410C', fontWeight: 800, marginBottom: '8px' }}>🎯 Bé nên cải thiện</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      {skillAssessment.improvements.map((item) => (
+                        <div key={item} style={{ color: '#9A3412', fontSize: '13px', lineHeight: 1.45 }}>• {item}</div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                </>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {skills.map((skill) => {
+                  const statusMeta = skill.status === 'strong'
+                    ? { label: 'Đang tốt', color: '#047857', background: '#ECFDF5', bar: '#10B981' }
+                    : skill.status === 'improve'
+                      ? { label: 'Nên cải thiện', color: '#C2410C', background: '#FFF7ED', bar: '#F97316' }
+                      : skill.status === 'not_started'
+                        ? { label: 'Chưa có dữ liệu', color: '#64748B', background: '#F8FAFC', bar: '#94A3B8' }
+                        : { label: 'Đang tiến bộ', color: '#1D4ED8', background: '#EFF6FF', bar: '#3B82F6' };
+                  const priorityMeta = skill.priority === 'high'
+                    ? { label: 'Ưu tiên cao', color: '#C2410C', background: '#FFF7ED' }
+                    : skill.priority === 'medium'
+                      ? { label: 'Ưu tiên vừa', color: '#1D4ED8', background: '#EFF6FF' }
+                      : { label: 'Duy trì & nâng cao', color: '#047857', background: '#ECFDF5' };
+
+                  return (
+                    <div key={skill.key} style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 700 }}>
+                        <span style={{ color: '#334155', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          {skill.label}
+                          <span style={{ color: statusMeta.color, backgroundColor: statusMeta.background, padding: '3px 8px', borderRadius: '999px', fontSize: '11px' }}>
+                            {statusMeta.label}
+                          </span>
+                        </span>
+                        <span style={{ color: statusMeta.color, fontWeight: 800 }}>{skill.score}%</span>
+                      </div>
+                      <div style={{ height: '8px', backgroundColor: '#E2E8F0', borderRadius: '999px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${skill.score}%`, backgroundColor: statusMeta.bar, borderRadius: '999px' }} />
+                      </div>
+                      <span style={{ fontSize: '12px', color: '#64748B' }}>{skill.comment}</span>
+                      <span style={{ fontSize: '11px', color: '#94A3B8' }}>Đã hoàn thành {skill.lessonsCompleted} bài</span>
+                      <details style={{ marginTop: '3px', backgroundColor: '#F8FAFC', borderRadius: '12px', padding: '9px 11px' }}>
+                        <summary style={{ color: '#475569', fontSize: '12px', fontWeight: 800, cursor: 'pointer' }}>🔍 Xem phân tích chuyên sâu</summary>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '8px', marginTop: '9px' }}>
+                          <div style={{ color: '#475569', fontSize: '12px', lineHeight: 1.45 }}><strong>Vì sao:</strong> {skill.reason}</div>
+                          <div style={{ color: '#475569', fontSize: '12px', lineHeight: 1.45 }}><strong>Trọng tâm:</strong> {skill.focus}</div>
+                          <div style={{ color: '#475569', fontSize: '12px', lineHeight: 1.45 }}><strong>Bước tiếp theo:</strong> {skill.nextStep}</div>
+                          <div style={{ color: '#475569', fontSize: '12px', lineHeight: 1.45 }}><strong>Luyện tại nhà:</strong> {skill.homePractice}</div>
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '9px' }}>
+                          <span style={{ color: priorityMeta.color, backgroundColor: priorityMeta.background, padding: '4px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 800 }}>{priorityMeta.label}</span>
+                          <span style={{ color: '#64748B', backgroundColor: '#FFFFFF', padding: '4px 8px', borderRadius: '999px', fontSize: '11px', fontWeight: 700 }}>Mục tiêu gần: {skill.targetScore}%</span>
+                        </div>
+                      </details>
+                    </div>
+                  );
+                })}
               </div>
+
+              {skillAssessment?.recommendations?.length ? (
+                <div style={{ backgroundColor: '#F8FAFC', borderRadius: '16px', padding: '14px 16px' }}>
+                  <div style={{ color: '#475569', fontWeight: 800, marginBottom: '7px' }}>💡 Gợi ý luyện tập</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                    {skillAssessment.recommendations.map((item) => (
+                      <div key={item} style={{ color: '#64748B', fontSize: '13px', lineHeight: 1.45 }}>• {item}</div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
 
           </div>

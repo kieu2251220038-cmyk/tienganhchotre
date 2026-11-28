@@ -625,37 +625,185 @@ export const getChildSkillAssessment = async (req: Request, res: Response): Prom
                 AVG(p.score) as avg_score
             FROM user_progress p
             JOIN lessons l ON p.lesson_id = l.id
-            WHERE p.user_id = ?
+            WHERE p.user_id = ? AND p.status = 'COMPLETED'
             GROUP BY l.lesson_type
         `, [childId]);
 
-        const skillMap: Record<string, { label: string; score: number; comment: string }> = {
-            'FLASHCARD': { label: 'Nhớ Từ Vựng (Vocabulary)', score: 85, comment: 'Bé nhận diện mặt chữ và hình ảnh rất nhanh' },
-            'QUIZ': { label: 'Tư Duy & Trắc Nghiệm (Quiz Logic)', score: 80, comment: 'Bé trả lời chính xác đa số các câu đố trực quan' },
-            'VIDEO': { label: 'Nghe Hiểu Âm Thanh (Listening)', score: 90, comment: 'Bé hào hứng theo dõi bài hát và bắt chước ngữ điệu tốt' },
-            'GAME': { label: 'Phản Xạ & Tương Tác (Reflex)', score: 88, comment: 'Thao tác ghép nối nhanh nhẹn và tự tin' }
-        };
-
-        for (const item of skillsData) {
-            const entry = skillMap[item.lesson_type];
-            if (entry) {
-                const s = Math.round(Number(item.avg_score) || 75);
-                entry.score = Math.min(100, Math.max(50, s));
+        const skillDefinitions = [
+            {
+                key: 'FLASHCARD',
+                label: 'Nhớ Từ Vựng (Vocabulary)',
+                strength: 'Bé ghi nhớ mặt chữ và hình ảnh tốt.',
+                improvement: 'Ôn lại từ cũ theo chủ đề và đặt câu ngắn với từ mới.',
+                practiceTip: 'Dành 5–10 phút mỗi ngày để ôn lại các thẻ từ vựng đã học.',
+                focus: 'Ghi nhớ chủ động và dùng từ trong câu.',
+                nextStep: 'Ôn 5 từ cũ, che nghĩa tiếng Việt rồi nói một câu tiếng Anh với từng từ.',
+                homePractice: 'Mỗi ngày 5 phút: xem tranh, nói từ, rồi đặt câu ngắn.',
+                targetScore: 85
+            },
+            {
+                key: 'QUIZ',
+                label: 'Tư Duy & Trắc Nghiệm (Quiz Logic)',
+                strength: 'Bé xử lý câu hỏi và nhận diện đáp án khá nhanh.',
+                improvement: 'Đọc kỹ câu hỏi, sau đó giải thích vì sao chọn đáp án.',
+                practiceTip: 'Cho bé làm lại các câu sai sau mỗi buổi học để củng cố tư duy.',
+                focus: 'Đọc hiểu yêu cầu và giải thích cách chọn đáp án.',
+                nextStep: 'Làm lại 3 câu sai; bé nói lý do chọn đáp án trước khi xem đáp án đúng.',
+                homePractice: 'Hỏi bé “Vì sao con chọn đáp án này?” để rèn suy luận, không chỉ nhớ đáp án.',
+                targetScore: 85
+            },
+            {
+                key: 'VIDEO',
+                label: 'Nghe Hiểu Âm Thanh (Listening)',
+                strength: 'Bé bắt nhịp âm thanh và ngữ điệu tự nhiên tốt.',
+                improvement: 'Nghe lại câu ngắn và nhắc lại từng cụm từ để tăng khả năng hiểu.',
+                practiceTip: 'Cùng bé nghe một bài hát hoặc đoạn hội thoại ngắn 2–3 lần.',
+                focus: 'Nhận diện từ khóa và hiểu ý chính khi nghe.',
+                nextStep: 'Nghe một câu 2 lần, dừng ở từ khóa, rồi nhắc lại cả câu.',
+                homePractice: 'Nghe một đoạn 1–2 phút cùng bé; sau đó hỏi bé chỉ ra 2 từ nghe được.',
+                targetScore: 85
+            },
+            {
+                key: 'GAME',
+                label: 'Phản Xạ & Tương Tác (Reflex)',
+                strength: 'Bé tương tác tự tin và phản xạ nhanh khi chơi.',
+                improvement: 'Luyện thao tác chậm, chính xác trước khi tăng tốc độ.',
+                practiceTip: 'Khuyến khích bé nói đáp án thành tiếng trong lúc chơi.',
+                focus: 'Phản xạ chính xác và diễn đạt đáp án thành tiếng.',
+                nextStep: 'Chơi chậm một lượt để nói đúng từ, sau đó mới tăng tốc độ.',
+                homePractice: 'Khuyến khích bé nói đáp án trước khi chạm/chọn để kết hợp phản xạ và ngôn ngữ.',
+                targetScore: 85
             }
+        ] as const;
+
+        const statsByType = new Map<string, { lessonsCompleted: number; averageScore: number }>();
+        for (const item of skillsData) {
+            statsByType.set(String(item.lesson_type), {
+                lessonsCompleted: Number(item.lessons_done) || 0,
+                averageScore: Math.min(100, Math.max(0, Math.round(Number(item.avg_score) || 0)))
+            });
         }
 
-        const skills = Object.values(skillMap);
+        const skills = skillDefinitions.map((definition) => {
+            const stats = statsByType.get(definition.key);
+            const lessonsCompleted = stats?.lessonsCompleted || 0;
+            const score = lessonsCompleted > 0 ? stats?.averageScore || 0 : 0;
+            const status = lessonsCompleted === 0
+                ? 'not_started'
+                : score >= 85
+                    ? 'strong'
+                    : score >= 70
+                        ? 'developing'
+                        : 'improve';
+            const priority = status === 'not_started' || status === 'improve'
+                ? 'high'
+                : status === 'developing'
+                    ? 'medium'
+                    : 'low';
 
-        const recommendations = [
-            'Bé đang có thế mạnh vượt trội ở phần Nghe Hiểu và Hình Ảnh sinh động.',
-            'Phụ huynh nên dành 10 phút buổi tối để cùng bé ôn lại các từ trong ngày.',
-            'Khuyến khích bé tự nói to thành câu đơn giản như "I like apple" hoặc "This is a cat".'
-        ];
+            const comment = status === 'not_started'
+                ? 'Chưa có đủ dữ liệu luyện tập để đánh giá kỹ năng này.'
+                : status === 'strong'
+                    ? `Điểm mạnh: ${definition.strength}`
+                    : status === 'developing'
+                        ? 'Bé đang tiến bộ tốt; luyện đều hơn sẽ giúp kỹ năng ổn định hơn.'
+                        : `Nên cải thiện: ${definition.improvement}`;
+            const reason = status === 'not_started'
+                ? 'Chưa có bài hoàn thành nên cần bắt đầu từ hoạt động ngắn để tạo dữ liệu đánh giá.'
+                : score < definition.targetScore
+                    ? `Điểm trung bình ${score}% sau ${lessonsCompleted} bài, còn thấp hơn mục tiêu gần ${definition.targetScore}%.`
+                    : `Điểm trung bình ${score}% sau ${lessonsCompleted} bài, đang đạt mục tiêu gần ${definition.targetScore}%.`;
+
+            return {
+                key: definition.key,
+                label: definition.label,
+                score,
+                lessonsCompleted,
+                status,
+                priority,
+                comment,
+                reason,
+                strength: definition.strength,
+                improvement: definition.improvement,
+                practiceTip: definition.practiceTip,
+                focus: definition.focus,
+                nextStep: definition.nextStep,
+                homePractice: definition.homePractice,
+                targetScore: definition.targetScore
+            };
+        });
+
+        const completedSkills = skills.filter((skill) => skill.lessonsCompleted > 0);
+        const strengths = completedSkills
+            .filter((skill) => skill.status === 'strong')
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 2)
+            .map((skill) => `${skill.label}: ${skill.strength} (${skill.score}%).`);
+
+        if (strengths.length === 0 && completedSkills.length > 0) {
+            const bestSkill = [...completedSkills].sort((a, b) => b.score - a.score)[0];
+            if (bestSkill) {
+                strengths.push(`${bestSkill.label} đang là kỹ năng tốt nhất của bé với ${bestSkill.score}%.`);
+            }
+        }
+        if (strengths.length === 0) {
+            strengths.push('Chưa có đủ dữ liệu để xác định kỹ năng bé đang làm tốt.');
+        }
+
+        const improvements = skills
+            .filter((skill) => skill.status !== 'strong')
+            .sort((a, b) => a.score - b.score)
+            .slice(0, 2)
+            .map((skill) => skill.status === 'not_started'
+                ? `${skill.label}: Bé chưa có lượt học hoàn thành; nên thử một bài ngắn trước.`
+                : `${skill.label}: ${skill.improvement} Điểm hiện tại ${skill.score}%.`);
+
+        if (improvements.length === 0) {
+            improvements.push('Các kỹ năng đã có dữ liệu đều đang ở mức tốt; tiếp tục duy trì thói quen học đều nhé.');
+        }
+
+        const recommendations: string[] = skills
+            .filter((skill) => skill.status !== 'strong')
+            .sort((a, b) => a.score - b.score)
+            .slice(0, 3)
+            .map((skill) => skill.practiceTip);
+
+        if (recommendations.length === 0) {
+            recommendations.push('Tiếp tục duy trì các bài học ngắn và đều đặn để giữ vững kết quả của bé.');
+        }
+
+        const totalCompletedLessons = skills.reduce((total, skill) => total + skill.lessonsCompleted, 0);
+        const weightedScore = totalCompletedLessons > 0
+            ? Math.round(skills.reduce((total, skill) => total + (skill.score * skill.lessonsCompleted), 0) / totalCompletedLessons)
+            : 0;
+        const strongestSkill = completedSkills.length > 0
+            ? [...completedSkills].sort((a, b) => b.score - a.score)[0]
+            : undefined;
+        const prioritySkill = skills
+            .filter((skill) => skill.status !== 'strong')
+            .sort((a, b) => {
+                if (a.priority !== b.priority) return a.priority === 'high' ? -1 : 1;
+                return a.score - b.score;
+            })[0];
+        const summaryMessage = totalCompletedLessons === 0
+            ? 'Chưa có đủ dữ liệu; hãy bắt đầu bằng một bài ngắn ở mỗi kỹ năng.'
+            : prioritySkill
+                ? `Bé có nền tảng tốt ở ${strongestSkill?.label || 'một số kỹ năng'}, nhưng nên ưu tiên ${prioritySkill.label} trong các buổi học tới.`
+                : 'Bé đang duy trì tốt cả 4 kỹ năng; hãy tiếp tục học đều và tăng dần độ khó.';
 
         res.status(200).json({
-            childId,
+            childId: Number(childId),
             skills,
-            recommendations
+            strengths,
+            improvements,
+            recommendations,
+            summary: {
+                averageScore: weightedScore,
+                completedLessons: totalCompletedLessons,
+                strongestSkill: strongestSkill?.label || null,
+                prioritySkill: prioritySkill?.label || null,
+                message: summaryMessage
+            }
         });
     } catch (error) {
         console.error('Lỗi phân tích kỹ năng bé:', error);

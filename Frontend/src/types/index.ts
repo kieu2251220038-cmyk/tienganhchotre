@@ -204,9 +204,36 @@ export interface ChildPronunciationProgress {
 }
 
 export interface ChildSkill {
+  key: string;
   label: string;
   score: number;
+  lessonsCompleted: number;
+  status: 'strong' | 'developing' | 'improve' | 'not_started';
+  priority: 'high' | 'medium' | 'low';
   comment: string;
+  reason: string;
+  strength: string;
+  improvement: string;
+  practiceTip: string;
+  focus: string;
+  nextStep: string;
+  homePractice: string;
+  targetScore: number;
+}
+
+export interface ChildSkillAssessment {
+  childId: number;
+  skills: ChildSkill[];
+  strengths: string[];
+  improvements: string[];
+  recommendations: string[];
+  summary: {
+    averageScore: number;
+    completedLessons: number;
+    strongestSkill: string | null;
+    prioritySkill: string | null;
+    message: string;
+  };
 }
 
 export interface Vocabulary {
